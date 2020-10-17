@@ -1,0 +1,4 @@
+pyqt5
+pyqtgraph
+sqlite3
+csv
