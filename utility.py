@@ -1,13 +1,17 @@
-import matplotlib.pyplot as plt
 from PyQt5 import QtGui
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, FigureCanvasAgg
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+import pyqtgraph as pg
+from matplotlib import rc
 
 
 class TeXRenderer:
     """Класс, отвечающий за отрисовку формул, написанных с помомщью LaTeX"""
-    def __init__(self, font_size=12, dpi=300):
+    def __init__(self, font_size=8, dpi=200):
+        rc('font', family='serif')
+        rc('mathtext', fontset='dejavuserif')
         self.fig = Figure(dpi=dpi)
+        self.fig.patch.set_facecolor('none')
         self.fig.set_canvas(FigureCanvasAgg(self.fig))
         self.renderer = self.fig.canvas.get_renderer()
         self.font_size = font_size
@@ -28,8 +32,15 @@ class TeXRenderer:
         image = QtGui.QImage.rgbSwapped(QtGui.QImage(buf, *size, QtGui.QImage.Format_ARGB32))
         pixmap = QtGui.QPixmap(image)
         return pixmap
-# TODO
-#
-# class MatplotlibPlotter(FigureCanvasQTAgg):
-#     def __init__(self, parent=None, width=5, height=4, dpi=100):
-#         pass
+
+
+class Plotter(pg.PlotWidget):
+    def __init__(self, *args, **kwargs):
+        pg.setConfigOptions(antialias=True)
+        pg.setConfigOption('background', 'w')
+        pg.setConfigOption('foreground', 'k')
+        super().__init__(*args, **kwargs)
+        grad = QtGui.QLinearGradient(0, 0, 0, 3)
+        grad.setColorAt(0.1, pg.mkColor('w'))
+        grad.setColorAt(0.9, pg.mkColor('g'))
+        self.brush = QtGui.QBrush(grad)
