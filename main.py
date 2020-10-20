@@ -1,7 +1,10 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt5.QtWidgets import (QApplication, QMainWindow,
+                             QFileDialog, QTableWidgetItem,
+                             QMessageBox)
 from views import Ui_SolveViewer, Ui_TaskViewer
 import numpy as np
 import sys
+from models import SettingsModel, TaskModel, CONNECTION
 
 
 class SolveViewer(QMainWindow, Ui_SolveViewer):
@@ -26,6 +29,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.tasks = TaskModel()
 
         self.action.triggered.connect(self.loadDB)
         self.action_2.triggered.connect(self.loadCSV)
@@ -33,27 +37,48 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.pushButton_2.clicked.connect(self.solveSelected)
         self.pushButton_3.clicked.connect(self.deleteSelected)
         self.pushButton_4.clicked.connect(self.appendTask)
+        self.db = True
+        self.loadDB()
 
-    def loadDB(self):  # TODO
-        pass
+    def loadDB(self):
+        self.db = True
+        self.tableWidget.setRowCount(0)
+        self.tableWidget.setColumnCount(len(self.tasks.ATTRS))
+        self.tableWidget.setHorizontalHeaderLabels(self.tasks.get_title())
+        for i, obj in enumerate(self.tasks.all()):
+            self.tableWidget.setRowCount(self.tableWidget.rowCount() + 1)
+            for j, attr in enumerate(self.tasks.ATTRS):
+                self.tableWidget.setItem(i, j, QTableWidgetItem(str(obj.__dict__[attr])))
 
     def loadCSV(self):  # TODO
-        pass
+        self.db = False
+        self.tableWidget.setRowCount(0)
 
-    def deleteSelected(self):  # TODO
-        pass
+    def deleteSelected(self):
+        ok = QMessageBox.question(
+            self, '', 'Вы действительно хотите удалить выбранные элементы?',
+            QMessageBox.Yes, QMessageBox.No)
+        if ok == QMessageBox.Yes:
+            for index in self.tableWidget.selectedIndexes():
+                self.tableWidget.removeRow(index)
+                if self.db:
+                    obj = self.tasks.get(id=index)
+                    if obj:
+                        obj.delete()
 
-    def solveSelected(self): # TODO
+    def solveSelected(self):  # TODO
         pass
 
     def appendTask(self):  # TODO
         pass
 
+    def closeEvent(self, event):
+        CONNECTION.close()
+        event.accept()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    sv = SolveViewer()
     tv = TaskViewer()
-    sv.show()
     tv.show()
     sys.exit(app.exec())
