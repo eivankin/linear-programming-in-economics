@@ -5,6 +5,7 @@ from views import Ui_SolveViewer, Ui_TaskViewer
 import numpy as np
 import sys
 from models import SettingsModel, TaskModel, CONNECTION
+from utility import TargetFunction
 
 
 class SolveViewer(QMainWindow, Ui_SolveViewer):
@@ -34,6 +35,8 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.action.triggered.connect(self.loadDB)
         self.action_2.triggered.connect(self.loadCSV)
 
+        self.lineEdit.textChanged.connect(self.search)
+
         self.pushButton_2.clicked.connect(self.solveSelected)
         self.pushButton_3.clicked.connect(self.deleteSelected)
         self.pushButton_4.clicked.connect(self.appendTask)
@@ -44,32 +47,46 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.db = True
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(len(self.tasks.ATTRS))
+        self.comboBox.addItems(self.tasks.get_title())
         self.tableWidget.setHorizontalHeaderLabels(self.tasks.get_title())
+        self.tableWidget.resizeColumnsToContents()
         for i, obj in enumerate(self.tasks.all()):
             self.tableWidget.setRowCount(self.tableWidget.rowCount() + 1)
             for j, attr in enumerate(self.tasks.ATTRS):
                 self.tableWidget.setItem(i, j, QTableWidgetItem(str(obj.__dict__[attr])))
+        self.statusbar.showMessage('База примеров упспешно загружена', msecs=5000)
 
     def loadCSV(self):  # TODO
         self.db = False
         self.tableWidget.setRowCount(0)
 
     def deleteSelected(self):
-        ok = QMessageBox.question(
-            self, '', 'Вы действительно хотите удалить выбранные элементы?',
-            QMessageBox.Yes, QMessageBox.No)
-        if ok == QMessageBox.Yes:
-            for index in self.tableWidget.selectedIndexes():
-                self.tableWidget.removeRow(index)
-                if self.db:
-                    obj = self.tasks.get(id=index)
-                    if obj:
-                        obj.delete()
+        selected = self.tableWidget.selectedIndexes()
+        if selected:
+            ok = QMessageBox.question(
+                self, '', 'Вы действительно хотите удалить выбранные элементы?',
+                QMessageBox.Yes, QMessageBox.No)
+            if ok == QMessageBox.Yes:
+                for index in selected:
+                    self.tableWidget.removeRow(index)
+                    if self.db:
+                        obj = self.tasks.get(id=index)
+                        if obj:
+                            obj.delete()
+        else:
+            self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
 
     def solveSelected(self):  # TODO
-        pass
+        selected = self.tableWidget.selectedIndexes()
+        if selected:
+            pass
+        else:
+            self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
 
     def appendTask(self):  # TODO
+        pass
+
+    def search(self, text):  # TODO
         pass
 
     def closeEvent(self, event):

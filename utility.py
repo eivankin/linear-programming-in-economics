@@ -18,3 +18,12 @@ class Plotter(pg.PlotWidget):
     def save(self, file_name):
         exporter = pg.exporters.ImageExporter(self.plotItem)
         exporter.export(file_name)
+
+
+class TargetFunction:
+    def __init__(self, a1, a2):
+        self.a1 = a1
+        self.a2 = a2
+
+    def __call__(self, x1, x2):
+        return self.a1 * x1 + self.a2 * x2

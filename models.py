@@ -10,6 +10,7 @@ CONNECTION = sqlite3.connect(DATABASE)
 CURSOR = CONNECTION.cursor()
 CURSOR.execute('''CREATE TABLE IF NOT EXISTS Settings (
                 id INTEGER PRIMARY KEY,
+                short_desc TEXT NOT NULL,
                 lc_colors TEXT NOT NULL,
                 tf_color TEXT NOT NULL,
                 fill_colors TEXT NOT NULL
@@ -18,7 +19,8 @@ CURSOR.execute('''CREATE TABLE IF NOT EXISTS Settings (
 CURSOR.execute('''CREATE TABLE IF NOT EXISTS Tasks (
                 id INTEGER PRIMARY KEY,
                 problem_situation TEXT,
-                target_func_lim INTEGER NOT NULL,
+                target_func_lim TEXT NOT NULL,
+                target_func_coefs TEXT NOT NULL,
                 linear_constraints TEXT NOT NULL,
                 settings_id INTEGER,
                 FOREIGN KEY (settings_id)
@@ -135,10 +137,12 @@ class SettingsModel(AbstractModel):
 
 class TaskModel(AbstractModel):
     TABLE = 'Tasks'
-    LIM_INF = 1
-    LIM_ZERO = 0
+    LIM_INF = 'inf'
+    LIM_ZERO = '0'
     VERBOSE_ATTRS = {
         'problem_situation': 'Условие задачи',
-        'target_func_lim': 'Целевая функция',
-        'linear_constraints': 'Линейные ограничения'
+        'target_func_lim': 'Целевая функция стремиться к',
+        'linear_constraints': 'Линейные ограничения',
+        'settings_id': 'Настройки',
+        'target_func_coefs': 'Коэффициенты целевой функции'
     }
