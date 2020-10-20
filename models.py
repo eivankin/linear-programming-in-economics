@@ -54,6 +54,16 @@ class AbstractModel:
                 self.saved = True
                 self.id = CURSOR.lastrowid
 
+        def update(self):
+            """Обновляет сохранённый объект в базе данных.
+            Если объект не сохранён, ничего не происходит."""
+            if self.saved:
+                CURSOR.execute(f'''UPDATE ? 
+                    SET {", ".join(["?=?"] * len(self.__dict__))}
+                    WHERE id=?''', (
+                    self.model.TABLE, *reduce(
+                        lambda res, x: res + x, self.__dict__.items()), self.id))
+
         def delete(self):
             """Удаляет объект из базы данных, если он есть в ней.
             Если объект не сохранён в базе данных, ничего не происходит."""
