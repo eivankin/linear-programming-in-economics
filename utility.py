@@ -1,5 +1,6 @@
 from PyQt5 import QtGui
 import pyqtgraph as pg
+import pyqtgraph.exporters
 
 
 class Plotter(pg.PlotWidget):
@@ -13,3 +14,7 @@ class Plotter(pg.PlotWidget):
         grad.setColorAt(0.9, pg.mkColor('g'))
         self.brush = QtGui.QBrush(grad)
         self.addLegend(offset=(-1, 1), pen=QtGui.QColor('grey'))
+
+    def save(self, file_name):
+        exporter = pg.exporters.ImageExporter(self.plotItem)
+        exporter.export(file_name)
