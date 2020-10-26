@@ -5,7 +5,7 @@ from functools import reduce
 связывающие таблицы в БД с объектами в коде (простой вариант ORM). 
 Все модели наследуются от базового класса AbstractModel."""
 
-DATABASE = 'tasks_and_settings.db'
+DATABASE = 'examples.db'
 CONNECTION = sqlite3.connect(DATABASE)
 CURSOR = CONNECTION.cursor()
 
@@ -32,8 +32,8 @@ class AbstractModel:
                     self.__dict__[key] = value
                 else:
                     raise AttributeError(f'"{type(model).__name__}" has no attribute "{key}"')
-            self.model = model
-            self.saved = saved
+            self.__dict__['model'] = model
+            self.__dict__['saved'] = saved
 
         def __setattr__(self, key, value):
             """Присваивает значение 'value' аттрибуту 'key',
@@ -92,10 +92,9 @@ class AbstractModel:
         if not kwargs:
             raise ValueError('''empty constraints (set it in method call). 
             Use method "all" to get full list of objects.''')
-        return CURSOR.execute(f'''SELECT * FROM {self.TABLE}
-            WHERE {" AND ".join(["?=?" * len(kwargs)])}''', (
-            *reduce(lambda res, x: res + x, kwargs.items()),
-        ))
+        q = f'''SELECT * FROM {self.TABLE} WHERE '''
+        q += ' AND '.join(map(lambda x: f'{x}=?', kwargs.keys()))
+        return CURSOR.execute(q, tuple(kwargs.values()))
 
     def row_to_obj(self, row):
         """Преобразует строку таблицы в объект модели.
@@ -117,14 +116,10 @@ class AbstractModel:
         return [self.row_to_obj(row) for row in result]
 
 
-class SettingsModel(AbstractModel):
-    TABLE = 'Settings'
-
-
 class TaskModel(AbstractModel):
     TABLE = 'Tasks'
-    LIM_INF = -1
-    LIM_ZERO = 1
+    LIM_ZERO = -1
+    LIM_INF = 1
     VERBOSE_ATTRS = {
         'problem_situation': 'Условие задачи',
         'target_func_lim': 'Целевая функция стремится к',
