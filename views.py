@@ -1,13 +1,14 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from utility import Plotter
 
+
 """В этом файле хранятся классы интерфейсов, созданных в QtDesigner"""
 
 
 class Ui_SolveViewer:
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(783, 389)
+        MainWindow.resize(800, 600)
         self.plotter = Plotter(MainWindow)
         self.plotter.setObjectName("plot")
         MainWindow.setCentralWidget(self.plotter)

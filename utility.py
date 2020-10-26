@@ -3,6 +3,8 @@ import pyqtgraph as pg
 import pyqtgraph.exporters
 from scipy.optimize import linprog
 import numpy as np
+from random import randint
+from collections import OrderedDict
 
 
 class Plotter(pg.PlotWidget):
@@ -14,13 +16,16 @@ class Plotter(pg.PlotWidget):
         super().__init__(*args, **kwargs)
         grad = QtGui.QLinearGradient(0, 0, 0, 3)
         grad.setColorAt(0.1, pg.mkColor('w'))
-        grad.setColorAt(0.9, pg.mkColor('g'))
+        grad.setColorAt(0.9, pg.mkColor('b'))
         self.brush = QtGui.QBrush(grad)
         self.addLegend(offset=(-1, 1), pen=QtGui.QColor('grey'))
 
     def save(self, file_name):
         exporter = pg.exporters.ImageExporter(self.plotItem)
         exporter.export(file_name)
+
+    def random_pen(self):
+        return pg.mkPen(randint(0, 255), randint(0, 255), randint(0, 255), width=2)
 
 
 class Solver:
@@ -30,20 +35,19 @@ class Solver:
         self.lim = task.target_func_lim
         self.coefs = np.fromstring(task.target_func_coefs, sep=',') * self.lim
         self.inequalities_coefs = np.fromstring(
-            task.inequalities_coefs, sep=',').reshape(2, -1) * -self.lim
+            task.inequalities_coefs, sep=',').reshape(-1, 2) * -self.lim
         self.inequalities_consts = np.fromstring(task.inequalities_consts, sep=',') * -self.lim
-        self.axis_coefs = np.fromstring(task.axis_coefs, sep=',').reshape(2, -1) * -self.lim
-        self.axis_consts = np.fromstring(task.axis_consts, sep=',') * -self.lim
-        self.points = ((self.inequalities_consts - self.inequalities_coefs * self.axis_consts)
-                       / self.inequalities_coefs[:, ::-1].T).T
+        self.axis_coefs = np.fromstring(task.axis_coefs, sep=',').reshape(-1, 2) * -1
+        self.axis_consts = np.fromstring(task.axis_consts, sep=',') * -1
+        self.points = (self.inequalities_consts / self.inequalities_coefs[:, ::-1].T).T
         self.possible_points = {}
 
     def get_bounds(self, margin_top, margin_bottom):
         """:param margin_top: отступ сверху.
         :param margin_bottom: отступ снизу.
-        :returns [xMin, xMax, yMin, yMax]: координаты прямоугольника, ограничивающего поле зрения."""
-        return self.axis_consts[0] - margin_bottom, np.max(self.points[:, ::2]) + margin_top, \
-            self.axis_consts[1] - margin_bottom, np.max(self.points[:, 1::2]) + margin_top
+        :returns dictionary('xMin', 'xMax', 'yMin', 'yMax'): координаты прямоугольника, ограничивающего поле зрения."""
+        return {'xMin': self.axis_consts[0] - margin_bottom, 'xMax': np.max(self.points[:, ::2]) + margin_top,
+                'yMin': self.axis_consts[1] - margin_bottom, 'yMax': np.max(self.points[:, 1::2]) + margin_top}
 
     def get_constraints(self):
         """:returns [[[x1_1, y2_2], [x1_2, y1_2]], ...]: список пар точек для построения линейных ограничений."""
@@ -55,9 +59,14 @@ class Solver:
 
     def solve(self):
         """:returns [x1, x2], L(x1, x2): точка оптимального решения и значение целевой функции в ней."""
-        result = linprog(self.coefs, np.append(self.inequalities_coefs, self.axis_coefs, 0),
-                         np.append(self.inequalities_consts, self.axis_consts),
-                         method='revised simplex', callback=self.__logging)
+        result = linprog(
+            self.coefs, np.append(self.inequalities_coefs, self.axis_coefs, 0),
+            np.append(self.inequalities_consts, self.axis_consts), method='revised simplex',
+            callback=self.__logging)
+        linprog(
+            self.coefs, np.append(self.inequalities_coefs, self.axis_coefs, 0),
+            np.append(self.inequalities_consts, self.axis_consts), method='revised simplex',
+            callback=self.__logging, options={'pivot': 'bland'})
         return result.x, result.fun * self.lim
 
     def __logging(self, res):
@@ -65,4 +74,4 @@ class Solver:
 
     def get_possible_points(self):
         """:returns possible_points: границы области допустимых решений."""
-        return self.possible_points
+        return OrderedDict(sorted(self.possible_points.items()))

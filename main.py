@@ -4,6 +4,10 @@ from views import Ui_SolveViewer, Ui_TaskViewer
 import sys
 from models import TaskModel, CONNECTION
 from utility import Solver
+from PyQt5.QtGui import QColor
+
+
+TASKS = TaskModel()
 
 
 class SolutionViewer(QMainWindow, Ui_SolveViewer):
@@ -14,23 +18,27 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
         self.consts = task.inequalities_consts.split(',')
         solver = Solver(task)
         self.mark = '&ge;' if solver.lim == TaskModel.LIM_ZERO else '&le;'
-        for i, constraint in enumerate(solver.get_constraints()):
-            self.plotter.plot(x=constraint[:, ::2], y=constraint[:, 1::2],
-                              name=self.render_constraint(i))
-        # self.plotter.plot(
-        #     y=3 + np.random.normal(size=50), brush=self.plotter.brush, fillLevel=0,
-        #     name=''
-        # )
-        self.plotter.plotItem.vb.setLimits(*solver.get_bounds(5, 0))
-        self.action_4.triggered.connect(self.saveImage)
+        for i, constraint in enumerate(solver.get_constraints()[:, :, ::-1]):
+            self.plotter.plot(x=constraint[:, ::2].ravel(),
+                              y=constraint[:, 1::2].ravel(),
+                              name=self.render_constraint(i),
+                              pen=self.plotter.random_pen())
+        self.plotter.plotItem.vb.setLimits(**solver.get_bounds(5, 0))
+        point, value = solver.solve()
+        print(point, value)
+        p_points = solver.get_possible_points()
+        print(p_points)
+        self.plotter.plot(x=tuple(p_points.keys()), y=tuple(p_points.values()),
+                          brush=QColor(0, 0, 255, 90), fillLevel=0, pen=None)
+        self.action_4.triggered.connect(self.save_image)
 
     def render_constraint(self, number):
         a1, a2 = self.coefs[number * 2:number * 2 + 2]
         const = self.consts[number]
         return f'<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', Times, serif">' \
-               f'{a1}x_1 + {a2}x_2 {self.mark} {const}</p>'
+               f'{a1}x<sub>1</sub> + {a2}x<sub>2</sub> {self.mark} {const}</p>'
 
-    def saveImage(self):
+    def save_image(self):
         file_name, ok = QFileDialog.getSaveFileName(self, 'Сохранить отчёт',
                                                     'Решение.png', 'Images (*.png *.jpg *.tiff)')
         if ok:
@@ -41,7 +49,6 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.tasks = TaskModel()
 
         self.action.triggered.connect(self.loadDB)
         self.action_2.triggered.connect(self.loadCSV)
@@ -57,13 +64,13 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
     def loadDB(self):
         self.db = True
         self.tableWidget.setRowCount(0)
-        self.tableWidget.setColumnCount(len(self.tasks.ATTRS))
-        self.comboBox.addItems(self.tasks.get_title())
-        self.tableWidget.setHorizontalHeaderLabels(self.tasks.get_title())
+        self.tableWidget.setColumnCount(len(TASKS.ATTRS))
+        self.comboBox.addItems(TASKS.get_title())
+        self.tableWidget.setHorizontalHeaderLabels(TASKS.get_title())
         self.tableWidget.resizeColumnsToContents()
-        for i, obj in enumerate(self.tasks.all()):
+        for i, obj in enumerate(TASKS.all()):
             self.tableWidget.setRowCount(self.tableWidget.rowCount() + 1)
-            for j, attr in enumerate(self.tasks.ATTRS):
+            for j, attr in enumerate(TASKS.ATTRS):
                 self.tableWidget.setItem(i, j, QTableWidgetItem(str(obj.__dict__[attr])))
         self.statusbar.showMessage('База примеров упспешно загружена', msecs=5000)
 
@@ -81,7 +88,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                 for index in selected:
                     self.tableWidget.removeRow(index)
                     if self.db:
-                        obj = self.tasks.get(id=index)
+                        obj = TASKS.get(id=index)
                         if obj:
                             obj.delete()
         else:
@@ -111,6 +118,9 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    tv = TaskViewer()
-    tv.show()
+    # tv = TaskViewer()
+    # tv.show()
+    task = TASKS.get(id=1)
+    sv = SolutionViewer(task)
+    sv.show()
     sys.exit(app.exec())
