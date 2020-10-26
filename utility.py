@@ -32,21 +32,28 @@ class Solver:
         self.inequalities_coefs = np.fromstring(
             task.inequalities_coefs, sep=',').reshape(2, -1) * -self.lim
         self.inequalities_consts = np.fromstring(task.inequalities_consts, sep=',') * -self.lim
-        self.points = (self.inequalities_consts / self.inequalities_coefs[:, ::-1].T).T
+        self.axis_coefs = np.fromstring(task.axis_coefs, sep=',').reshape(2, -1) * -self.lim
+        self.axis_consts = np.fromstring(task.axis_consts, sep=',') * -self.lim
+        self.points = ((self.inequalities_consts - self.inequalities_coefs * self.axis_consts)
+                       / self.inequalities_coefs[:, ::-1].T).T
 
     def get_bounds(self, margin_top, margin_bottom):
         """:param margin_top: отступ сверху.
         :param margin_bottom: отступ снизу.
         :return [xMin, xMax, yMin, yMax]: координаты прямоугольника, ограничивающего поле зрения."""
-        return np.min(self.points[:, ::2]) - margin_bottom, np.max(self.points[:, ::2]) + margin_top, \
-            np.min(self.points[:, 1::2]) - margin_bottom, np.max(self.points[:, 1::2]) + margin_top
+        return self.axis_consts[0] - margin_bottom, np.max(self.points[:, ::2]) + margin_top, \
+            self.axis_consts[1] - margin_bottom, np.max(self.points[:, 1::2]) + margin_top
 
     def get_constraints(self):
         """:return [[[x1_1, y2_2], [x1_2, y1_2]], ...]: список пар точек для построения линейных ограничений."""
-        return self.points
+        c = self.points.copy()[:, :, np.newaxis]
+        p = np.zeros(c.shape[:2] + (2,))
+        p[:, ::2] = np.append(c[:, ::2], np.full(c[:, ::2].shape, self.axis_consts[1]), 2)
+        p[:, 1::2] = np.append(np.full(c[:, 1::2].shape, self.axis_consts[0]), c[:, 1::2], 2)
+        return p
 
     def solve(self):
         """:returns [x1, x2], L(x1, x2): точка оптимального решения и значение целевой функции в ней."""
-        result = linprog(self.coefs, self.inequalities_coefs,
-                         self.inequalities_consts)
+        result = linprog(self.coefs, np.append(self.inequalities_coefs, self.axis_coefs, 0),
+                         np.append(self.inequalities_consts, self.axis_consts))
         return result.x, result.fun * self.lim
