@@ -36,16 +36,17 @@ class Solver:
         self.axis_consts = np.fromstring(task.axis_consts, sep=',') * -self.lim
         self.points = ((self.inequalities_consts - self.inequalities_coefs * self.axis_consts)
                        / self.inequalities_coefs[:, ::-1].T).T
+        self.possible_points = {}
 
     def get_bounds(self, margin_top, margin_bottom):
         """:param margin_top: отступ сверху.
         :param margin_bottom: отступ снизу.
-        :return [xMin, xMax, yMin, yMax]: координаты прямоугольника, ограничивающего поле зрения."""
+        :returns [xMin, xMax, yMin, yMax]: координаты прямоугольника, ограничивающего поле зрения."""
         return self.axis_consts[0] - margin_bottom, np.max(self.points[:, ::2]) + margin_top, \
             self.axis_consts[1] - margin_bottom, np.max(self.points[:, 1::2]) + margin_top
 
     def get_constraints(self):
-        """:return [[[x1_1, y2_2], [x1_2, y1_2]], ...]: список пар точек для построения линейных ограничений."""
+        """:returns [[[x1_1, y2_2], [x1_2, y1_2]], ...]: список пар точек для построения линейных ограничений."""
         c = self.points.copy()[:, :, np.newaxis]
         p = np.zeros(c.shape[:2] + (2,))
         p[:, ::2] = np.append(c[:, ::2], np.full(c[:, ::2].shape, self.axis_consts[1]), 2)
@@ -55,5 +56,13 @@ class Solver:
     def solve(self):
         """:returns [x1, x2], L(x1, x2): точка оптимального решения и значение целевой функции в ней."""
         result = linprog(self.coefs, np.append(self.inequalities_coefs, self.axis_coefs, 0),
-                         np.append(self.inequalities_consts, self.axis_consts))
+                         np.append(self.inequalities_consts, self.axis_consts),
+                         method='revised simplex', callback=self.__logging)
         return result.x, result.fun * self.lim
+
+    def __logging(self, res):
+        self.possible_points[res.x[0]] = max(self.possible_points.get(res.x[0], res.x[1] - 1), res.x[1])
+
+    def get_possible_points(self):
+        """:returns possible_points: границы области допустимых решений."""
+        return self.possible_points
