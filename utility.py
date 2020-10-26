@@ -32,14 +32,18 @@ class Solver:
         self.inequalities_coefs = np.fromstring(
             task.inequalities_coefs, sep=',').reshape(2, -1) * -self.lim
         self.inequalities_consts = np.fromstring(task.inequalities_consts, sep=',') * -self.lim
+        self.points = (self.inequalities_consts / self.inequalities_coefs[:, ::-1].T).T
 
-    def get_bounds(self):  # TODO
-        """:return [xMin, xMax, yMin, yMax]: координаты прямоугольника, ограничивающего поле зрения."""
-        return
+    def get_bounds(self, margin_top, margin_bottom):
+        """:param margin_top: отступ сверху.
+        :param margin_bottom: отступ снизу.
+        :return [xMin, xMax, yMin, yMax]: координаты прямоугольника, ограничивающего поле зрения."""
+        return np.min(self.points[:, ::2]) - margin_bottom, np.max(self.points[:, ::2]) + margin_top, \
+            np.min(self.points[:, 1::2]) - margin_bottom, np.max(self.points[:, 1::2]) + margin_top
 
-    def get_constraints(self):  # TODO
+    def get_constraints(self):
         """:return [[[x1_1, y2_2], [x1_2, y1_2]], ...]: список пар точек для построения линейных ограничений."""
-        return
+        return self.points
 
     def solve(self):
         """:returns [x1, x2], L(x1, x2): точка оптимального решения и значение целевой функции в ней."""
