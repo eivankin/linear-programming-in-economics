@@ -1,23 +1,34 @@
-from PyQt5.QtWidgets import (QApplication, QMainWindow,
-                             QFileDialog, QTableWidgetItem,
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QFileDialog, QTableWidgetItem,
                              QMessageBox)
 from views import Ui_SolveViewer, Ui_TaskViewer
-import numpy as np
 import sys
-from models import SettingsModel, TaskModel, CONNECTION
-from utility import TargetFunction
+from models import TaskModel, CONNECTION
+from utility import Solver
 
 
-class SolveViewer(QMainWindow, Ui_SolveViewer):
-    def __init__(self):
+class SolutionViewer(QMainWindow, Ui_SolveViewer):
+    def __init__(self, task):
         super().__init__()
         self.setupUi(self)
-        self.plotter.plot(
-            y=3 + np.random.normal(size=50), brush=self.plotter.brush, fillLevel=0,
-            name='<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', Times, serif">x &ge; y</p>'
-        )
-        self.plotter.plotItem.vb.setLimits(xMin=-1, xMax=51, yMin=-1, yMax=10)
+        self.coefs = task.inequalities_coefs.split(',')
+        self.consts = task.inequalities_consts.split(',')
+        solver = Solver(task)
+        self.mark = '&ge;' if solver.lim == TaskModel.LIM_ZERO else '&le;'
+        for i, constraint in enumerate(solver.get_constraints()):
+            self.plotter.plot(x=constraint[:, ::2], y=constraint[:, 1::2],
+                              name=self.render_constraint(i))
+        # self.plotter.plot(
+        #     y=3 + np.random.normal(size=50), brush=self.plotter.brush, fillLevel=0,
+        #     name=''
+        # )
+        self.plotter.plotItem.vb.setLimits(*solver.get_bounds(5, 0))
         self.action_4.triggered.connect(self.saveImage)
+
+    def render_constraint(self, number):
+        a1, a2 = self.coefs[number * 2:number * 2 + 2]
+        const = self.consts[number]
+        return f'<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', Times, serif">' \
+               f'{a1}x_1 + {a2}x_2 {self.mark} {const}</p>'
 
     def saveImage(self):
         file_name, ok = QFileDialog.getSaveFileName(self, 'Сохранить отчёт',
@@ -61,7 +72,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.tableWidget.setRowCount(0)
 
     def deleteSelected(self):
-        selected = self.tableWidget.selectedIndexes()
+        selected = self.tableWidget.selectedIndexes()  # TODO: indexes to ids
         if selected:
             ok = QMessageBox.question(
                 self, '', 'Вы действительно хотите удалить выбранные элементы?',
@@ -79,7 +90,8 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
     def solveSelected(self):  # TODO
         selected = self.tableWidget.selectedIndexes()
         if selected:
-            pass
+            solution_viewer = SolutionViewer(self.__get_obj(selected[0]))
+            solution_viewer.show()
         else:
             self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
 
@@ -87,6 +99,9 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         pass
 
     def search(self, text):  # TODO
+        pass
+
+    def __get_obj(self, selected):  # TODO
         pass
 
     def closeEvent(self, event):
