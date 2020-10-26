@@ -1,9 +1,12 @@
-from PyQt5 import QtGui
+﻿from PyQt5 import QtGui
 import pyqtgraph as pg
 import pyqtgraph.exporters
+from scipy.optimize import linprog
+import numpy as np
 
 
 class Plotter(pg.PlotWidget):
+    """Виджет для отрисовки решения"""
     def __init__(self, *args, **kwargs):
         pg.setConfigOptions(antialias=True)
         pg.setConfigOption('background', 'w')
@@ -20,10 +23,26 @@ class Plotter(pg.PlotWidget):
         exporter.export(file_name)
 
 
-class TargetFunction:
-    def __init__(self, a1, a2):
-        self.a1 = a1
-        self.a2 = a2
+class Solver:
+    """Класс для решения задачи линейного программирования и получения значений для построения.
+    :param task: объект модели TaskModel."""
+    def __init__(self, task):
+        self.lim = task.target_func_lim
+        self.coefs = np.fromstring(task.target_func_coefs, sep=',') * self.lim
+        self.inequalities_coefs = np.fromstring(
+            task.inequalities_coefs, sep=',').reshape(2, -1) * -self.lim
+        self.inequalities_consts = np.fromstring(task.inequalities_consts, sep=',') * -self.lim
 
-    def __call__(self, x1, x2):
-        return self.a1 * x1 + self.a2 * x2
+    def get_bounds(self):  # TODO
+        """:return [xMin, xMax, yMin, yMax]: координаты прямоугольника, ограничивающего поле зрения."""
+        return
+
+    def get_constraints(self):  # TODO
+        """:return [[[x1_1, y2_2], [x1_2, y1_2]], ...]: список пар точек для построения линейных ограничений."""
+        return
+
+    def solve(self):
+        """:returns [x1, x2], L(x1, x2): точка оптимального решения и значение целевой функции в ней."""
+        result = linprog(self.coefs, self.inequalities_coefs,
+                         self.inequalities_consts)
+        return result.x, result.fun * self.lim
