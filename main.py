@@ -12,12 +12,14 @@ TAGS = TagModel()
 
 
 class SolutionViewer(QMainWindow, Ui_SolveViewer):
-    def __init__(self, task):
-        """:param task: объект модели TaskModel"""
+    def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.action.triggered.connect(self.save_image)
 
+    def show_solution(self, task):
+        """:param task: объект модели TaskModel"""
+        self.plotter.plotItem.clear()
         self.coefs = task.inequalities_coefs.split(',')
         self.consts = task.inequalities_consts.split(',')
         solver = Solver(task)
@@ -36,15 +38,15 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
         except NoSolutionError:
             QMessageBox.warning(self, 'Ошибка!',
                                 'Похоже, у задачи нет решения. Проверьте правильность входных данных.')
-            self.close()
+            return
         except SolverException as e:
             QMessageBox.warning(self, 'Ошибка!',
                                 f'К сожалению, задачу решить не удалось.\nПричина: {e}')
-            self.close()
+            return
         except Exception as e:
             QMessageBox.warning(self, 'Непредвиденная ошибка!',
                                 f'В ходе решения произошла непредвиденная ошибка {e}')
-            self.close()
+            return
         if solver.lim == TaskModel.LIM_INF:
             p_points = solver.get_possible_points()
             if DEBUG:
@@ -64,6 +66,7 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
             name='<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', '
                  'Times, serif">Оптимальное значение ЦФ</p>'
         )
+        super().show()
 
     def render_constraint(self, number):
         """:param number: порядковый номер ограничения, начиная с 0."""
@@ -91,9 +94,10 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
 
         self.pushButton_2.clicked.connect(self.solve_selected)
         self.pushButton_3.clicked.connect(self.delete_selected)
-        self.pushButton_4.clicked.connect(self.appendTask)
+        self.pushButton_4.clicked.connect(self.append_task)
         self.db = True
         self.load_db()
+        self.solution_viewer = SolutionViewer()
 
     def load_db(self):
         self.db = True
@@ -131,10 +135,10 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
             self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
 
     def solve_selected(self):  # TODO
-        selected = self.tableWidget.selectedIndexes()
+        selected = [[self.tableWidget.item(i.row(), j).text() for j in range(len(TASKS.ATTRS))]
+                    for i in self.tableWidget.selectedItems()]
         if selected:
-            solution_viewer = SolutionViewer(TASKS.row_to_obj(selected[0]))
-            solution_viewer.show()
+            self.solution_viewer.show_solution(TASKS.row_to_obj(selected[0]))
         else:
             self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
 
@@ -154,9 +158,9 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    # tv = TaskViewer()
-    # tv.show()
-    task = TASKS.get(id=2)
-    sv = SolutionViewer(task)
-    sv.show()
+    tv = TaskViewer()
+    tv.show()
+    # task = TASKS.get(id=1)
+    # sv = SolutionViewer(task)
+    # sv.show()
     sys.exit(app.exec())

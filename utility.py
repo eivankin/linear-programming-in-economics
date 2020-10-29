@@ -5,6 +5,7 @@ from scipy.optimize import linprog
 import numpy as np
 from random import randint
 from collections import OrderedDict
+from models import TaskModel
 
 
 class SolverException(Exception):
@@ -45,7 +46,11 @@ class Solver:
     :param task: объект модели TaskModel."""
 
     def __init__(self, task):
-        self.lim = task.target_func_lim
+        if type(task.target_func_lim) == str:
+            dd = TaskModel.VERBOSE_VALS['target_func_lim']
+            self.lim = list(dd.keys())[list(dd.values()).index(task.target_func_lim)]
+        else:
+            self.lim = task.target_func_lim
         self.coefs = np.fromstring(task.target_func_coefs, sep=',') * self.lim
         self.inequalities_coefs = np.fromstring(
             task.inequalities_coefs, sep=',').reshape(-1, 2) * -self.lim
