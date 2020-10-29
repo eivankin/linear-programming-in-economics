@@ -1,5 +1,6 @@
 import sqlite3
 from functools import reduce
+from collections import defaultdict
 
 """В этом файле содержится подключение к базе данных sqlite3 и объекты моделей,
 связывающие таблицы в БД с объектами в коде (простой вариант ORM). 
@@ -13,6 +14,7 @@ CURSOR = CONNECTION.cursor()
 class AbstractModel:
     TABLE = None
     VERBOSE_ATTRS = {}
+    VERBOSE_VALS = defaultdict(dict)
 
     def __init__(self):
         self.ATTRS = [] if not self.TABLE else [
@@ -117,12 +119,12 @@ class AbstractModel:
 
 
 class TaskModel(AbstractModel):
-    TABLE = 'Tasks'
-    LIM_ZERO = -1
-    LIM_INF = 1
+    TABLE = 'Task'
+    LIM_INF = -1
+    LIM_ZERO = 1
     VERBOSE_ATTRS = {
         'problem_situation': 'Условие задачи',
-        'target_func_lim': 'Целевая функция стремится к',
+        'target_func_lim': 'Оптимальное значение ЦФ',
         'target_func_coefs': 'Коэффициенты ЦФ',
         'inequalities_coefs': 'Коэффициенты линейных ограничений',
         'inequalities_consts': 'Значения линейных ограничений',
@@ -130,3 +132,15 @@ class TaskModel(AbstractModel):
         'axis_consts': 'Значения осевых ограничений',
         'settings_id': 'Настройки стилей',
     }
+    VERBOSE_VALS = defaultdict(
+        dict, {'target_func_lim': {LIM_INF: 'Максимум', LIM_ZERO: 'Минимум'}}
+    )
+
+
+class TagModel(AbstractModel):
+    TABLE = 'Tag'
+    VERBOSE_ATTRS = {'name': 'Название тега'}
+
+
+class TaskTag(AbstractModel):
+    TABLE = 'TaskTag'
