@@ -15,7 +15,7 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.action.triggered.connect(self.save_image)
+        self.saveReportAction.triggered.connect(self.save_image)
 
     def show_solution(self, task):
         """:param task: объект модели TaskModel"""
@@ -83,14 +83,16 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         super().__init__()
         self.setupUi(self)
 
-        self.action.triggered.connect(self.load_db)
-        self.action_2.triggered.connect(self.load_csv)
+        self.loadDBAction.triggered.connect(self.load_db)
+        self.loadFileAction.triggered.connect(self.load_csv)
+        self.addNewTaskAction.triggered.connect(self.append_task)
+        self.solveNewTaskAcion.triggered.connect(self.solve_new_task)
 
-        self.lineEdit.textChanged.connect(self.search)
+        self.searchLine.textChanged.connect(self.search)
 
-        self.pushButton_2.clicked.connect(self.solve_selected)
-        self.pushButton_3.clicked.connect(self.delete_selected)
-        self.pushButton_4.clicked.connect(self.append_task)
+        self.solveButton.clicked.connect(self.solve_selected)
+        self.deleteButton.clicked.connect(self.delete_selected)
+        self.exportButton.clicked.connect(self.export)
         self.load_db()
         self.solution_viewer = SolutionViewer()
 
@@ -130,10 +132,14 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
             self.statusbar.showMessage('Задачи из файла успешно загржены', msecs=5000)
 
     def delete_selected(self):
-        selected = self.tableWidget.selectedIndexes()  # TODO: indexes to ids
+        selected = [i.row() for i in self.tableWidget.selectedItems()]
         if selected:
             ok = QMessageBox.question(
-                self, '', 'Вы действительно хотите удалить выбранные элементы?',
+                self, 'Удаление элементов',
+                (f'Вы точно хотите удалить выбранные элементы в строках {", ".join(selected)}? '
+                 'Они будут безвозвратно удалены из базы данных' if self.db else
+                 'Выбранные задачи будут просто скрыты из таблицы. '
+                 'Для их удаления необходимо будет перезаписать файл через опцию "Сохранить".'),
                 QMessageBox.Yes, QMessageBox.No)
             if ok == QMessageBox.Yes:
                 for index in selected:
@@ -156,7 +162,13 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
     def append_task(self):  # TODO
         pass
 
+    def solve_new_task(self):  # TODO
+        pass
+
     def search(self, text):  # TODO
+        pass
+
+    def export(self):  # TODO
         pass
 
     def closeEvent(self, event):
