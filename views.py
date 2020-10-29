@@ -23,16 +23,7 @@ class Ui_SolveViewer:
         MainWindow.setMenuBar(self.menubar)
         self.action = QtWidgets.QAction(MainWindow)
         self.action.setObjectName("action")
-        self.action_2 = QtWidgets.QAction(MainWindow)
-        self.action_2.setObjectName("action_2")
-        self.action_3 = QtWidgets.QAction(MainWindow)
-        self.action_3.setObjectName("action_3")
-        self.action_4 = QtWidgets.QAction(MainWindow)
-        self.action_4.setObjectName("action_4")
         self.menu.addAction(self.action)
-        self.menu.addAction(self.action_2)
-        self.menu.addAction(self.action_3)
-        self.menu.addAction(self.action_4)
         self.menubar.addAction(self.menu.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -41,8 +32,8 @@ class Ui_SolveViewer:
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Решение задачи"))
-        self.menu.setTitle(_translate("MainWindow", "Сохранить отчёт в виде изображения"))
-
+        self.menu.setTitle(_translate("MainWindow", "Экспорт"))
+        self.action.setText(_translate("MainWindow", "Сохранить отчёт в виде изображения"))
 
 class Ui_TaskViewer:
     def setupUi(self, MainWindow):

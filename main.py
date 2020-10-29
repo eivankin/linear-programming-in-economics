@@ -16,6 +16,8 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
         """:param task: объект модели TaskModel"""
         super().__init__()
         self.setupUi(self)
+        self.action.triggered.connect(self.save_image)
+
         self.coefs = task.inequalities_coefs.split(',')
         self.consts = task.inequalities_consts.split(',')
         solver = Solver(task)
@@ -62,7 +64,6 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
             name='<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', '
                  'Times, serif">Оптимальное значение ЦФ</p>'
         )
-        self.menu.triggered.connect(self.save_image)
 
     def render_constraint(self, number):
         """:param number: порядковый номер ограничения, начиная с 0."""
