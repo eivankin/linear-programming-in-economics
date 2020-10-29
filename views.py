@@ -35,6 +35,7 @@ class Ui_SolveViewer:
         self.menu.setTitle(_translate("MainWindow", "Экспорт"))
         self.action.setText(_translate("MainWindow", "Сохранить отчёт в виде изображения"))
 
+
 class Ui_TaskViewer:
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")

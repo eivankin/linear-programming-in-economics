@@ -5,8 +5,8 @@ import sys
 from models import TaskModel, TagModel, CONNECTION
 from utility import Solver, NoSolutionError, SolverException
 from PyQt5.QtGui import QColor
+import csv
 
-DEBUG = True
 TASKS = TaskModel()
 TAGS = TagModel()
 
@@ -33,8 +33,6 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
         self.plotter.plotItem.vb.setLimits(**bounds)
         try:
             point, opt_value = solver.solve()
-            if DEBUG:
-                print(point, opt_value)
         except NoSolutionError:
             QMessageBox.warning(self, 'Ошибка!',
                                 'Похоже, у задачи нет решения. Проверьте правильность входных данных.')
@@ -49,8 +47,6 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
             return
         if solver.lim == TaskModel.LIM_INF:
             p_points = solver.get_possible_points()
-            if DEBUG:
-                print(p_points)
             self.plotter.plot(
                 x=tuple(p_points.keys()), y=tuple(p_points.values()),
                 brush=QColor(0, 0, 255, 90), pen=None,
@@ -95,7 +91,6 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.pushButton_2.clicked.connect(self.solve_selected)
         self.pushButton_3.clicked.connect(self.delete_selected)
         self.pushButton_4.clicked.connect(self.append_task)
-        self.db = True
         self.load_db()
         self.solution_viewer = SolutionViewer()
 
@@ -107,16 +102,32 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.tableWidget.setHorizontalHeaderLabels(TASKS.get_title())
         self.tableWidget.resizeColumnsToContents()
         for i, obj in enumerate(TASKS.all()):
-            self.tableWidget.setRowCount(self.tableWidget.rowCount() + 1)
+            self.tableWidget.setRowCount(i + 1)
             for j, attr in enumerate(TASKS.ATTRS):
                 self.tableWidget.setItem(
                     i, j, QTableWidgetItem(TASKS.VERBOSE_VALS[attr].get(
                         obj.__dict__[attr], str(obj.__dict__[attr]))))
         self.statusbar.showMessage('База примеров упспешно загружена', msecs=5000)
 
-    def load_csv(self):  # TODO
-        self.db = False
-        self.tableWidget.setRowCount(0)
+    def load_csv(self):
+        file_name, ok = QFileDialog.getOpenFileName(self, 'Выберите таблицу', '', 'CSV-таблица (*.csv)')
+        if ok:
+            with open(file_name, encoding='utf8') as csv_file:
+                table = csv.reader(csv_file, delimiter=';', quotechar='"')
+                title = next(table)
+                if title == TASKS.ATTRS[1:]:
+                    self.db = False
+                    self.tableWidget.setRowCount(0)
+                    for i, row in enumerate(table, start=1):
+                        self.tableWidget.setRowCount(i)
+                        for j, val in enumerate([i] + row):
+                            current = TASKS.VERBOSE_VALS[TASKS.ATTRS[j]]
+                            self.tableWidget.setItem(i - 1, j, QTableWidgetItem(
+                                current.get(type(list(current)[0] if current else '')(val), str(val))
+                            ))
+                else:
+                    self.statusbar.showMessage('Некорректная структура таблицы', msecs=5000)
+            self.statusbar.showMessage('Задачи из файла успешно загржены', msecs=5000)
 
     def delete_selected(self):
         selected = self.tableWidget.selectedIndexes()  # TODO: indexes to ids
@@ -134,7 +145,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         else:
             self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
 
-    def solve_selected(self):  # TODO
+    def solve_selected(self):
         selected = [[self.tableWidget.item(i.row(), j).text() for j in range(len(TASKS.ATTRS))]
                     for i in self.tableWidget.selectedItems()]
         if selected:
@@ -148,9 +159,6 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
     def search(self, text):  # TODO
         pass
 
-    def __get_obj(self, selected):  # TODO
-        pass
-
     def closeEvent(self, event):
         CONNECTION.close()
         event.accept()
@@ -160,7 +168,4 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     tv = TaskViewer()
     tv.show()
-    # task = TASKS.get(id=1)
-    # sv = SolutionViewer(task)
-    # sv.show()
     sys.exit(app.exec())
