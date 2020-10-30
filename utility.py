@@ -6,6 +6,18 @@ import numpy as np
 from random import randint
 from collections import OrderedDict
 from models import TaskModel
+import csv
+
+
+def compress(x):
+    return ','.join(map(str, x))
+
+
+def save_csv(file_name, table, delimiter):
+    with open(file_name, 'w', newline='') as out:
+        writer = csv.writer(out, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
+        for row in table:
+            writer.writerow(row)
 
 
 class SolverException(Exception):
