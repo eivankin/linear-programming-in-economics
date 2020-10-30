@@ -2,7 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from utility import Plotter
 
 
-"""В этом файле хранятся классы интерфейсов, созданных в QtDesigner"""
+"""В этом файле хранятся классы интерфейсов, переделанные из созданных в QtDesigner"""
 # TODO: export dialog, info dialog
 
 
@@ -346,3 +346,64 @@ class Ui_NewConstraintDialog(object):
         self.typeSelector.setItemText(1, _translate("Dialog", "<="))
         self.pushButton.setText(_translate("Dialog", "ОК"))
 
+
+class Ui_ExportDialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Dialog")
+        Dialog.resize(400, 260)
+        self.verticalLayout = QtWidgets.QVBoxLayout(Dialog)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.label = QtWidgets.QLabel(Dialog)
+        self.label.setObjectName("label")
+        self.verticalLayout.addWidget(self.label)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.lineEdit = QtWidgets.QLineEdit(Dialog)
+        self.lineEdit.setObjectName("lineEdit")
+        self.horizontalLayout.addWidget(self.lineEdit)
+        self.toolButton = QtWidgets.QToolButton(Dialog)
+        self.toolButton.setObjectName("toolButton")
+        self.horizontalLayout.addWidget(self.toolButton)
+        self.verticalLayout.addLayout(self.horizontalLayout)
+        self.label_2 = QtWidgets.QLabel(Dialog)
+        self.label_2.setObjectName("label_2")
+        self.verticalLayout.addWidget(self.label_2)
+        self.lineEdit_2 = QtWidgets.QLineEdit(Dialog)
+        self.lineEdit_2.setObjectName("lineEdit_2")
+        self.verticalLayout.addWidget(self.lineEdit_2)
+        self.label_3 = QtWidgets.QLabel(Dialog)
+        self.label_3.setObjectName("label_3")
+        self.verticalLayout.addWidget(self.label_3)
+        self.checkBox = QtWidgets.QCheckBox(Dialog)
+        self.checkBox.setChecked(True)
+        self.checkBox.setObjectName("checkBox")
+        self.verticalLayout.addWidget(self.checkBox)
+        self.radioButton = QtWidgets.QRadioButton(Dialog)
+        self.radioButton.setObjectName("radioButton")
+        self.verticalLayout.addWidget(self.radioButton)
+        self.radioButton_2 = QtWidgets.QRadioButton(Dialog)
+        self.radioButton_2.setObjectName("radioButton_2")
+        self.verticalLayout.addWidget(self.radioButton_2)
+        self.buttonBox = QtWidgets.QDialogButtonBox(Dialog)
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName("buttonBox")
+        self.verticalLayout.addWidget(self.buttonBox)
+
+        self.retranslateUi(Dialog)
+        self.buttonBox.accepted.connect(Dialog.accept)
+        self.buttonBox.rejected.connect(Dialog.reject)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Dialog", "Экспорт задач"))
+        self.label.setText(_translate("Dialog", "Путь к файлу:"))
+        self.lineEdit.setText(_translate("Dialog", "tasks.csv"))
+        self.toolButton.setText(_translate("Dialog", "..."))
+        self.label_2.setText(_translate("Dialog", "Разделитель:"))
+        self.lineEdit_2.setText(_translate("Dialog", ";"))
+        self.label_3.setText(_translate("Dialog", "Опции:"))
+        self.checkBox.setText(_translate("Dialog", "Первая строка таблицы - заголовок"))
+        self.radioButton.setText(_translate("Dialog", "Экспортировать все задачи"))
+        self.radioButton_2.setText(_translate("Dialog", "Экспортировать только выбранные"))
