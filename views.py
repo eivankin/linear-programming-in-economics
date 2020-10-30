@@ -3,7 +3,7 @@ from utility import Plotter
 
 
 """В этом файле хранятся классы интерфейсов, переделанные из созданных в QtDesigner"""
-# TODO: export dialog, info dialog
+# TODO: info dialog
 
 
 class Ui_SolveViewer:
@@ -214,9 +214,9 @@ class Ui_NewTaskDialog(object):
         self.toolButton = QtWidgets.QToolButton(Dialog)
         self.toolButton.setObjectName("toolButton")
         self.gridLayout.addWidget(self.toolButton, 0, 1, 1, 1)
-        self.costraints = QtWidgets.QListWidget(Dialog)
-        self.costraints.setObjectName("costraints")
-        self.gridLayout.addWidget(self.costraints, 0, 0, 2, 1)
+        self.constraintsList = QtWidgets.QListWidget(Dialog)
+        self.constraintsList.setObjectName("costraints")
+        self.gridLayout.addWidget(self.constraintsList, 0, 0, 2, 1)
         self.verticalLayout.addLayout(self.gridLayout)
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
