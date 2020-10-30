@@ -102,6 +102,8 @@ class AbstractModel:
         """Преобразует строку таблицы в объект модели.
         :param row: строка таблицы.
         :return ModelObject: созданный объект."""
+        if len(row) == len(self.ATTRS) - 1:
+            return self.__ModelObject(self, False, **dict(zip(self.ATTRS[1:], row)))
         return self.__ModelObject(self, True, **dict(zip(self.ATTRS, row)))
 
     def get(self, **kwargs):
