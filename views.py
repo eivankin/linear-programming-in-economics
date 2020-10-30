@@ -3,7 +3,7 @@ from utility import Plotter
 
 
 """В этом файле хранятся классы интерфейсов, созданных в QtDesigner"""
-# TODO: export dialog, new task dialog
+# TODO: export dialog, info dialog
 
 
 class Ui_SolveViewer:
@@ -74,9 +74,12 @@ class Ui_TaskViewer:
         self.solveButton.setObjectName("pushButton_2")
         self.exportButton = QtWidgets.QPushButton(self.centralwidget)
         self.exportButton.setObjectName("pushButton_3")
+        self.saveButton = QtWidgets.QPushButton(self.centralwidget)
+        self.saveButton.setObjectName("pushButton_4")
         self.buttonLayout.addWidget(self.solveButton)
         self.buttonLayout.addWidget(self.deleteButton)
         self.buttonLayout.addWidget(self.exportButton)
+        self.buttonLayout.addWidget(self.saveButton)
         self.verticalLayout.addLayout(self.buttonLayout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -119,6 +122,7 @@ class Ui_TaskViewer:
         self.solveButton.setText(_translate("MainWindow", "Решить"))
         self.deleteButton.setText(_translate("MainWindow", "Удалить"))
         self.exportButton.setText(_translate("MainWindow", "Экспортировать"))
+        self.saveButton.setText(_translate("MainWindow", "Сохранить изменения"))
         self.loadMenu.setTitle(_translate("MainWindow", "Открыть"))
         self.newTaskMenu.setTitle(_translate("MainWindow", "Новая задача"))
         self.loadDBAction.setText(_translate("MainWindow", "Базу примеров"))
