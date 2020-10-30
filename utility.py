@@ -89,10 +89,11 @@ class Solver:
                 raise NoSolutionError
             raise SolverException(result.message)
 
-        linprog(
-            self.coefs, np.append(self.inequalities_coefs, self.axis_coefs, 0),
-            np.append(self.inequalities_consts, self.axis_consts), method='revised simplex',
-            callback=self.__logging, options={'pivot': 'bland'})
+        if self.lim == TaskModel.LIM_INF:
+            linprog(
+                self.coefs, np.append(self.inequalities_coefs, self.axis_coefs, 0),
+                np.append(self.inequalities_consts, self.axis_consts), method='revised simplex',
+                callback=self.__logging, options={'pivot': 'bland'})
         return result.x, result.fun * self.lim
 
     def __logging(self, res):
