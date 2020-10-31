@@ -61,7 +61,8 @@ class AbstractModel:
                                tuple(values))
                 CONNECTION.commit()
                 self._saved = True
-                self.id = CURSOR.lastrowid
+                if 'id' in self._model.ATTRS:
+                    self.id = CURSOR.lastrowid
 
         def delete(self):
             """Удаляет объект из базы данных, если он есть в ней.

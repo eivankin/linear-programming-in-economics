@@ -331,13 +331,13 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                 self.statusbar.showMessage('Задача добавлена в таблицу, для сохранения файла с ней нажмите конпку '
                                            '"Сохранить изменения"', msecs=5000)
             else:
+                task.save()
                 tag_1 = TASKS_TAGS.new(task_id=task.id, tag_id=TAGS.get(name='Мои задачи').id)
                 tag_1.save()
                 tag_2 = TASKS_TAGS.new(task_id=task.id, tag_id=TAGS.get(
                     name=('Поиск максимума' if task.target_func_lim == TaskModel.LIM_INF
                           else 'Поиск минимума')).id)
                 tag_2.save()
-                task.save()
                 self.load_db()
                 self.statusbar.showMessage('Задача успешно добавлена в базу данных', msecs=5000)
 
