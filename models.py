@@ -34,50 +34,57 @@ class AbstractModel:
                     self.__dict__[key] = value
                 else:
                     raise AttributeError(f'"{type(model).__name__}" has no attribute "{key}"')
-            self.__dict__['model'] = model
-            self.__dict__['saved'] = saved
+            self._model = model
+            self._saved = saved
 
         def __setattr__(self, key, value):
             """Присваивает значение 'value' аттрибуту 'key',
             если 'key' есть в списке аттрибутов модели,
             иначе - поднимает исключение."""
-            if key in self.model.ATTRS:
+            if key.startswith('_') or key in self._model.ATTRS:
                 self.__dict__[key] = value
             else:
-                raise AttributeError(f'"{type(self.model).__name__}" has no attribute "{key}"')
+                raise AttributeError(f'"{type(self._model).__name__}" has no attribute "{key}"')
 
         def save(self):
             """Сохраняет объект в базе данных и помечает его как сохранённый.
             Если объект уже сохранён, то ничего не происходит."""
-            if not self.saved:
-                keys = self.__dict__.keys()
-                values = self.__dict__.values()
-                CURSOR.execute(f'''INSERT INTO {self.model.TABLE}
-                                ({", ".join("?" * len(keys))}) 
+            if not self._saved:
+                filtered = {}
+                for key in self.__dict__.keys():
+                    if not key.startswith('_'):
+                        filtered[key] = self.__dict__[key]
+                keys = filtered.keys()
+                values = filtered.values()
+                CURSOR.execute(f'''INSERT INTO {self._model.TABLE}
+                                ({", ".join(keys)}) 
                                 VALUES ({", ".join("?" * len(values))})''',
-                               (*keys, *values))
+                               tuple(values))
                 CONNECTION.commit()
-                self.saved = True
+                self._saved = True
                 self.id = CURSOR.lastrowid
 
         def update(self):
             """Обновляет сохранённый объект в базе данных.
             Если объект не сохранён, ничего не происходит."""
-            if self.saved:
-                CURSOR.execute(f'''UPDATE {self.model.TABLE}
-                    SET {", ".join(["?=?"] * len(self.__dict__))}
-                    WHERE id=?''', (
-                    *reduce(
-                        lambda res, x: res + x, self.__dict__.items()), self.id),)
+            if self._saved:
+                filtered = {}
+                for key in self.__dict__.keys():
+                    if not key.startswith('_') and key != 'id':
+                        filtered[key] = self.__dict__[key]
+
+                CURSOR.execute(f'''UPDATE {self._model.TABLE}
+                    SET {", ".join(map(lambda x: f'{x}=?', filtered.keys()))}
+                    WHERE id=?''', (*filtered.values(), self.id))
                 CONNECTION.commit()
 
         def delete(self):
             """Удаляет объект из базы данных, если он есть в ней.
             Если объект не сохранён в базе данных, ничего не происходит."""
-            if self.saved:
-                CURSOR.execute(f'''DELETE FROM {self.model.TABLE} WHERE id=?''', (self.id, ))
+            if self._saved:
+                CURSOR.execute(f'''DELETE FROM {self._model.TABLE} WHERE id=?''', (self.id, ))
                 CONNECTION.commit()
-                self.saved = False
+                self._saved = False
                 del self.id
 
     def new(self, **kwargs):
