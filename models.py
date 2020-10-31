@@ -92,13 +92,14 @@ class AbstractModel:
         return [self.__ModelObject(self, True, **dict(zip(self.ATTRS, x)))
                 for x in CURSOR.execute('SELECT * FROM ' + self.TABLE).fetchall()]
 
-    def __get_filter_cursor(self, **kwargs):
+    def __get_filter_cursor(self, mode='=', **kwargs):
         if not kwargs:
             raise ValueError('''empty constraints (set it in method call). 
             Use method "all" to get full list of objects.''')
+        values = kwargs.values() if mode == '=' else map(lambda x: f'%{x}%', kwargs.values())
         q = f'''SELECT * FROM {self.TABLE} WHERE '''
-        q += ' AND '.join(map(lambda x: f'{x}=?', kwargs.keys()))
-        return CURSOR.execute(q, tuple(kwargs.values()))
+        q += ' AND '.join(map(lambda x: f'{x} {mode} ?', kwargs.keys()))
+        return CURSOR.execute(q, tuple(values))
 
     def row_to_obj(self, row):
         """Преобразует строку таблицы в объект модели.
@@ -113,12 +114,14 @@ class AbstractModel:
         Если объектов, удовлетворяющих ограничениям, несколько, то возвращает первый.
         Если объект не найден, возвращает None"""
         result = self.__get_filter_cursor(**kwargs).fetchone()
-        return result if not result else self.row_to_obj(result)
+        return None if not result else self.row_to_obj(result)
 
     def filter(self, **kwargs):
-        """Возвращает список объектов по заданным ограничениям типа 'аттрибут=значение'.
-        Список объектов может быть пустым."""
+        """Возвращает список строк с атрибутами объектов по заданным ограничениям типа 'аттрибут=значение'.
+        Список может быть пустым."""
         result = self.__get_filter_cursor(**kwargs).fetchall()
+        if not result:
+            result = self.__get_filter_cursor(mode='LIKE', **kwargs).fetchall()
         return [self.row_to_obj(row) for row in result]
 
 

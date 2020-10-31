@@ -228,7 +228,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.exportButton.clicked.connect(self.export)
         self.exportButton.setToolTip('Открыть диалог экспорта задач в CSV.')
         self.tableWidget.setColumnCount(len(TASKS.ATTRS))
-        self.comboBox.addItems(TASKS.get_title())
+        self.comboBox.addItems(TASKS.get_title()[:2])
         self.tableWidget.setHorizontalHeaderLabels(TASKS.get_title())
         self.tableWidget.resizeColumnsToContents()
         self.load_db()
@@ -315,11 +315,11 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                 self.statusbar.showMessage('Задача добавлена в таблицу, для сохранения файла с ней нажмите конпку '
                                            '"Сохранить изменения"', msecs=5000)
             else:
-                tag_1 = TASKS_TAGS.new(task_id=task.id, tag_id=TAGS.get(name='Мои задачи'))
+                tag_1 = TASKS_TAGS.new(task_id=task.id, tag_id=TAGS.get(name='Мои задачи').id)
                 tag_1.save()
                 tag_2 = TASKS_TAGS.new(task_id=task.id, tag_id=TAGS.get(
                     name=('Поиск максимума' if task.target_func_lim == TaskModel.LIM_INF
-                          else 'Поиск минимума')))
+                          else 'Поиск минимума')).id)
                 tag_2.save()
                 task.save()
                 self.load_db()
@@ -331,8 +331,47 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         if ok:
             self.solution_viewer.show_solution(task)
 
-    def search(self):  # TODO
-        pass
+    def search(self):
+        query = self.searchLine.text()
+        tag = self.tagSelector.currentText()
+        field = self.comboBox.currentText()
+        search_by_tag = tag != 'Любой'
+        if query or search_by_tag:
+            if self.current_file:
+                self.load_csv(self.current_file)
+                result = []
+                for i in range(self.tableWidget.rowCount()):
+                    if field != 'Условие задачи' and self.tableWidget.item(i, 0).text() == query or \
+                            field != 'id' and query.lower() in self.tableWidget.item(i, 1).text().lower():
+                        result.append([self.tableWidget.item(i, j).text()
+                                       for j in range(self.tableWidget.columnCount())])
+            else:
+                if query:
+                    if field != 'По всем параметрам':
+                        result = TASKS.filter(**{field: query})
+                    else:
+                        result = TASKS.filter(id=query) + TASKS.filter(problem_situation=query)
+                else:
+                    result = TASKS.all()
+
+                if search_by_tag:
+                    tasks = set([task_tag.task_id for task_tag in
+                                 TASKS_TAGS.filter(tag_id=TAGS.get(name=tag).id)])
+                    result = [obj for obj in result if obj.id in tasks]
+
+                result = [tuple(obj.__dict__.values()) for obj in result]
+
+            if result:
+                self.statusbar.showMessage(f'Найдено задач: {len(result)}', msecs=5000)
+                self.tableWidget.setRowCount(0)
+                for i, row in enumerate(result):
+                    self.tableWidget.setRowCount(i + 1)
+                    for j, elem in enumerate(row):
+                        self.tableWidget.setItem(i, j, QTableWidgetItem(str(elem)))
+            else:
+                self.statusbar.showMessage('Ничего не найдено', msecs=5000)
+        else:
+            self.statusbar.showMessage('Задан пустой поисковый запрос', msecs=5000)
 
     def export(self):
         """Экспорт таблицы в формат csv без сохранения id."""
