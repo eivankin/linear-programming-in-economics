@@ -74,7 +74,7 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
         a1, a2 = self.coefs[number * 2:number * 2 + 2]
         const = self.consts[number]
         return f'<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', Times, serif">' \
-               f'{a1}x<sub>1</sub> + {a2}x<sub>2</sub> {self.mark} {const}</p>'
+               f'{float(a1):.2g}x<sub>1</sub> + {float(a2):.2g}x<sub>2</sub> {self.mark} {float(const):.2g}</p>'
 
 
 class NewConstraintDialog(QDialog, Ui_NewConstraintDialog):
@@ -131,7 +131,7 @@ class NewTaskDialog(QDialog, Ui_NewTaskDialog):
         if ok:
             self.constraints['coefs'].extend([x * lim_type for x in coefs])
             self.constraints['consts'].append(const * lim_type)
-            self.constraintsList.addItem(f'{coefs[0]}*x1+{coefs[1]}*x2 {symbol} {const}')
+            self.constraintsList.addItem(f'{coefs[0]:.2g}*x1+{coefs[1]:.2g}*x2 {symbol} {const:.2g}')
 
     def remove_constraint(self):
         selected = [x.row() for x in self.constraintsList.selectedIndexes()]
@@ -151,8 +151,8 @@ class NewTaskDialog(QDialog, Ui_NewTaskDialog):
         tf_coefs = self.a1Coef.value(), self.a2Coef.value()
         c_coefs = self.constraints['coefs']
         c_consts = self.constraints['consts']
-        axis_coefs = [1 * tf_opt_val, 0, 0, 1 * tf_opt_val]
-        axis_consts = [self.x1Gte.value(), self.x2Gte.value()]
+        axis_coefs = [1, 0, 0, 1]
+        axis_consts = [self.x1Gte.value() * tf_opt_val, self.x2Gte.value() * tf_opt_val]
         if tf_coefs[0] or tf_coefs[1]:
             self.result = [ps, tf_opt_val, compress(tf_coefs), compress(c_coefs),
                            compress(c_consts), compress(axis_coefs), compress(axis_consts)]
