@@ -3,13 +3,14 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, \
 from views import Ui_SolveViewer, Ui_TaskViewer, Ui_NewTaskDialog, \
     Ui_NewConstraintDialog, Ui_ExportDialog
 import sys
-from models import TaskModel, TagModel, CONNECTION
+from models import TaskModel, TagModel, TaskTagModel, CONNECTION
 from utility import Solver, NoSolutionError, SolverException, save_csv, compress
 from PyQt5.QtGui import QColor
 import csv
 
 TASKS = TaskModel()
 TAGS = TagModel()
+TASKS_TAGS = TaskTagModel()
 
 
 class SolutionViewer(QMainWindow, Ui_SolveViewer):
@@ -208,6 +209,8 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.tableWidget.itemChanged.connect(self.handle_change)
         self.changes = {}
 
+        self.tagSelector.addItems([x.name for x in TAGS.all()])
+
         self.loadDBAction.triggered.connect(self.load_db)
         self.loadFileAction.triggered.connect(self.load_csv)
         self.addNewTaskAction.triggered.connect(self.append_task)
@@ -224,17 +227,18 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.deleteButton.setToolTip('Удалить выбранные задачи')
         self.exportButton.clicked.connect(self.export)
         self.exportButton.setToolTip('Открыть диалог экспорта задач в CSV.')
+        self.tableWidget.setColumnCount(len(TASKS.ATTRS))
+        self.comboBox.addItems(TASKS.get_title())
+        self.tableWidget.setHorizontalHeaderLabels(TASKS.get_title())
+        self.tableWidget.resizeColumnsToContents()
         self.load_db()
         self.solution_viewer = SolutionViewer()
         self.current_file = None
 
     def load_db(self):
+        self.tagSelector.setEnabled(True)
         self.current_file = None
         self.tableWidget.setRowCount(0)
-        self.tableWidget.setColumnCount(len(TASKS.ATTRS))
-        self.comboBox.addItems(TASKS.get_title())
-        self.tableWidget.setHorizontalHeaderLabels(TASKS.get_title())
-        self.tableWidget.resizeColumnsToContents()
         for i, obj in enumerate(TASKS.all()):
             self.tableWidget.setRowCount(i + 1)
             for j, attr in enumerate(TASKS.ATTRS):
@@ -249,6 +253,8 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
             file_name, ok = QFileDialog.getOpenFileName(self, 'Выберите таблицу', '',
                                                         'CSV-таблица с разделителем ";" (*.csv)')
         if ok:
+            self.tagSelector.setCurrentIndex(0)
+            self.tagSelector.setDisabled(True)
             with open(file_name, encoding='utf-8') as csv_file:
                 table = csv.reader(csv_file, delimiter=';', quotechar='"')
                 title = next(table)
@@ -309,6 +315,12 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                 self.statusbar.showMessage('Задача добавлена в таблицу, для сохранения файла с ней нажмите конпку '
                                            '"Сохранить изменения"', msecs=5000)
             else:
+                tag_1 = TASKS_TAGS.new(task_id=task.id, tag_id=TAGS.get(name='Мои задачи'))
+                tag_1.save()
+                tag_2 = TASKS_TAGS.new(task_id=task.id, tag_id=TAGS.get(
+                    name=('Поиск максимума' if task.target_func_lim == TaskModel.LIM_INF
+                          else 'Поиск минимума')))
+                tag_2.save()
                 task.save()
                 self.load_db()
                 self.statusbar.showMessage('Задача успешно добавлена в базу данных', msecs=5000)
@@ -319,7 +331,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         if ok:
             self.solution_viewer.show_solution(task)
 
-    def search(self, text):  # TODO
+    def search(self):  # TODO
         pass
 
     def export(self):

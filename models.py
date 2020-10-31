@@ -146,5 +146,5 @@ class TagModel(AbstractModel):
     VERBOSE_ATTRS = {'name': 'Название тега'}
 
 
-class TaskTag(AbstractModel):
+class TaskTagModel(AbstractModel):
     TABLE = 'TaskTag'
