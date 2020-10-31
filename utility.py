@@ -36,11 +36,7 @@ class Plotter(pg.PlotWidget):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         super().__init__(*args, **kwargs)
-        grad = QtGui.QLinearGradient(0, 0, 0, 3)
-        grad.setColorAt(0.1, pg.mkColor('w'))
-        grad.setColorAt(0.9, pg.mkColor('b'))
         self.plotItem.showGrid(x=True, y=True)
-        self.gradient = QtGui.QBrush(grad)
         self.addLegend(offset=(-1, 1), pen=QtGui.QColor('grey'), brush='w')
 
     def save(self, file_name):

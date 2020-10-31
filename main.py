@@ -61,12 +61,13 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
         self.plotter.plot(
             x=[0, opt_value / solver.coefs[0] * solver.lim], y=[opt_value / solver.coefs[1] * solver.lim, 0],
             pen=self.plotter.pen('r'), name='<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', '
-                                            'Times, serif">Целевая функция</p>')
+                                            'Times, serif">Целевая функция, проходящая через точку '
+                                            f'А({point[0]:.2g}, {point[1]:.2g})</p>')
         self.plotter.plot(
             x=[point[0]], y=[point[1]], symbol='+', symbolSize=20,
             symbolBrush='b', symbolPen=None, pen=None,
             name='<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', '
-                 'Times, serif">Оптимальное значение ЦФ</p>'
+                 f'Times, serif">Оптимальное значение ЦФ ({opt_value:.2g})</p>'
         )
         super().show()
 
