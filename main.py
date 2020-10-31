@@ -23,6 +23,7 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
     def show_solution(self, task):
         """:param task: объект модели TaskModel"""
         self.plotter.plotItem.clear()
+        self.plotter.plotItem.legend.clear()
         self.coefs = task.inequalities_coefs.split(',')
         self.consts = task.inequalities_consts.split(',')
         try:
@@ -68,11 +69,12 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
             return
         if solver.lim == TaskModel.LIM_INF:
             p_points = solver.get_possible_points()
-            self.plotter.plot(
-                x=tuple(p_points.keys()), y=tuple(p_points.values()),
-                brush=QColor(0, 0, 255, 90), pen=None,
-                fillLevel=bounds['xMin'] if solver.lim == TaskModel.LIM_INF else bounds['xMax']
-            )
+            if len(p_points) > 2:
+                self.plotter.plot(
+                    x=tuple(p_points.keys()), y=tuple(p_points.values()),
+                    brush=QColor(0, 0, 255, 90), pen=None,
+                    fillLevel=bounds['xMin'] if solver.lim == TaskModel.LIM_INF else bounds['xMax']
+                )
         self.plotter.plot(
             x=[0, opt_value / solver.coefs[0] * solver.lim], y=[opt_value / solver.coefs[1] * solver.lim, 0],
             pen=self.plotter.pen('r'), name='<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', '

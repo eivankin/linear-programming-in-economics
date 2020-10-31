@@ -7,6 +7,9 @@ from random import randint
 from collections import OrderedDict
 from models import TaskModel
 import csv
+import warnings
+
+warnings.filterwarnings('ignore')
 
 
 def compress(x):
