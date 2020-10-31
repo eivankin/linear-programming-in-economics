@@ -161,14 +161,41 @@ class NewTaskDialog(QDialog, Ui_NewTaskDialog):
             QMessageBox.warning(self, 'Ошибка!', 'Оба коэффициента ЦФ не могут быть нулевыми!')
 
 
-class ExportDialog(QDialog, Ui_ExportDialog):  # TODO
+class ExportDialog(QDialog, Ui_ExportDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setupUi(self)
+        self.buttonBox.accepted.connect(self.check_form)
+        self.toolButton.clicked.connect(self.select_file)
+        self.options = {}
+        self.file_name = ''
 
     def get_export_options(self):
         ok = super().exec()
-        return ok, '', {}
+        return ok, self.file_name, self.options
+
+    def check_form(self):
+        self.file_name = self.lineEdit.text()
+        delimiter = self.lineEdit_2.text()
+        write_title = self.checkBox.isChecked()
+        export_all = self.radioButton.isChecked()
+        if self.file_name and delimiter:
+            if export_all or list(self.parent().tableWidget.selectedIndexes()):
+                self.options['delimiter'] = delimiter
+                self.options['write_title'] = write_title
+                self.options['export_all'] = export_all
+                self.accept()
+            else:
+                QMessageBox.warning(self, 'Ошибка!', 'Задачи для экспорта не выбраны')
+        else:
+            QMessageBox.warning(self, 'Ошибка!', 'Поле с именем файла и разделителем '
+                                                 'для таблицы должны быть заполнены.')
+
+    def select_file(self):
+        file_name, ok = QFileDialog.getSaveFileName(self, 'Выберите файл для сохранения',
+                                                    '', 'СSV-таблица (*.csv)')
+        if ok:
+            self.lineEdit.setText(file_name)
 
 
 class TaskViewer(QMainWindow, Ui_TaskViewer):
@@ -184,9 +211,14 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.searchLine.textChanged.connect(self.search)
 
         self.saveButton.clicked.connect(self.save_changes)
+        self.saveButton.setToolTip('Сохранить изменения, внесённые напрямую в таблицу.')
         self.solveButton.clicked.connect(self.solve_selected)
+        self.solveButton.setToolTip('Решить выбранную задачу. '
+                                    'Если выбрано несколько, будет решена первая выбранная.')
         self.deleteButton.clicked.connect(self.delete_selected)
+        self.deleteButton.setToolTip('Удалить выбранные задачи')
         self.exportButton.clicked.connect(self.export)
+        self.exportButton.setToolTip('Открыть диалог экспорта задач в CSV.')
         self.load_db()
         self.solution_viewer = SolutionViewer()
         self.current_file = None
@@ -212,7 +244,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
             file_name, ok = QFileDialog.getOpenFileName(self, 'Выберите таблицу', '',
                                                         'CSV-таблица с разделителем ";" (*.csv)')
         if ok:
-            with open(file_name, encoding='utf8') as csv_file:
+            with open(file_name, encoding='utf-8') as csv_file:
                 table = csv.reader(csv_file, delimiter=';', quotechar='"')
                 title = next(table)
                 if title == TASKS.ATTRS[1:]:
@@ -222,9 +254,11 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                         self.tableWidget.setRowCount(i)
                         for j, val in enumerate([i] + row):
                             current = TASKS.VERBOSE_VALS[TASKS.ATTRS[j]]
-                            self.tableWidget.setItem(i - 1, j, QTableWidgetItem(
-                                current.get(type(list(current)[0] if current else '')(val), str(val))
-                            ))
+                            try:
+                                decoded_val = current.get(type(list(current)[0] if current else '')(val), str(val))
+                            except ValueError:
+                                decoded_val = val
+                            self.tableWidget.setItem(i - 1, j, QTableWidgetItem(decoded_val))
                 else:
                     self.statusbar.showMessage('Некорректная структура таблицы', msecs=5000)
             self.statusbar.showMessage('Задачи из файла успешно загржены', msecs=5000)
@@ -283,19 +317,35 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
     def search(self, text):  # TODO
         pass
 
-    def export(self):  # TODO
+    def export(self):
+        """Экспорт таблицы в формат csv без сохранения id."""
         ed = ExportDialog(self)
         ok, file_name, options = ed.get_export_options()
         if ok:
             table = []
-            save_csv(file_name, table, options['delimiter'])
+            if options['write_title']:
+                table.append(TASKS.ATTRS[1:])
+            if options['export_all']:
+                indexes = range(self.tableWidget.rowCount())
+            else:
+                indexes = sorted(set([i.row() for i in self.tableWidget.selectedItems()]))
+            for i in indexes:
 
-    def save_changes(self):  # TODO
+                table.append([self.tableWidget.item(i, j).text() for j in range(1, len(TASKS.ATTRS))])
+            save_csv(file_name, table, options['delimiter'])
+            self.statusbar.showMessage('Задачи успешо экспортированы', msecs=5000)
+
+    def save_changes(self):
+        """Сохранение изменений, внесённых пользователем напрямую в таблицу."""
         if not self.current_file:
-            pass  # saving db objects with update method
+            pass  # TODO: saving db objects with update method
         else:
-            table = []
+            table = [TASKS.ATTRS[1:]]
+            for i in range(self.tableWidget.rowCount()):
+                table.append([self.tableWidget.item(i, j).text() for j in range(1, len(TASKS.ATTRS))])
             save_csv(self.current_file, table, ';')
+            self.load_csv(self.current_file)
+        self.statusbar.showMessage('Изменения успешно сохранены', msecs=5000)
 
     def closeEvent(self, event):
         CONNECTION.close()

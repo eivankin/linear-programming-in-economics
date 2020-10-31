@@ -368,6 +368,7 @@ class Ui_ExportDialog(object):
         self.verticalLayout.addWidget(self.radioButton)
         self.radioButton_2 = QtWidgets.QRadioButton(Dialog)
         self.radioButton_2.setObjectName("radioButton_2")
+        self.radioButton_2.setChecked(True)
         self.verticalLayout.addWidget(self.radioButton_2)
         self.buttonBox = QtWidgets.QDialogButtonBox(Dialog)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
@@ -376,7 +377,6 @@ class Ui_ExportDialog(object):
         self.verticalLayout.addWidget(self.buttonBox)
 
         self.retranslateUi(Dialog)
-        self.buttonBox.accepted.connect(Dialog.accept)
         self.buttonBox.rejected.connect(Dialog.reject)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 

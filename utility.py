@@ -14,7 +14,7 @@ def compress(x):
 
 
 def save_csv(file_name, table, delimiter):
-    with open(file_name, 'w', newline='') as out:
+    with open(file_name, 'w', newline='', encoding='utf-8') as out:
         writer = csv.writer(out, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
         for row in table:
             writer.writerow(row)
