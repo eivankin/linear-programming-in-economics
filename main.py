@@ -7,6 +7,8 @@ from models import TaskModel, TagModel, TaskTagModel, CONNECTION
 from utility import Solver, NoSolutionError, SolverException, save_csv, compress
 from PyQt5.QtGui import QColor
 import csv
+import numpy as np
+from pyqtgraph import PlotDataItem
 
 TASKS = TaskModel()
 TAGS = TagModel()
@@ -32,10 +34,22 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
             return
         self.mark = '&ge;' if solver.lim == TaskModel.LIM_ZERO else '&le;'
         for i, constraint in enumerate(solver.get_constraints()[:, :, ::-1]):
-            self.plotter.plot(x=constraint[:, ::2].ravel(),
-                              y=constraint[:, 1::2].ravel(),
-                              name=self.render_constraint(i),
-                              pen=self.plotter.pen())
+            pen = self.plotter.pen()
+            if constraint[0][1] == np.inf:
+                self.plotter.addLine(constraint[1][0], angle=90, pen=pen)
+                self.plotter.plotItem.legend.addItem(
+                    PlotDataItem(pen=pen), name=self.render_constraint(i))
+
+            elif constraint[1][0] == np.inf:
+                self.plotter.addLine(constraint[0][1], angle=0, pen=pen)
+                self.plotter.plotItem.legend.addItem(
+                    PlotDataItem(pen=pen), name=self.render_constraint(i))
+
+            else:
+                self.plotter.plot(x=constraint[:, ::2].ravel(),
+                                  y=constraint[:, 1::2].ravel(),
+                                  name=self.render_constraint(i),
+                                  pen=self.plotter.pen())
         bounds = solver.get_bounds(5, 0)
         self.plotter.plotItem.vb.setLimits(**bounds)
         try:

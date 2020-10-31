@@ -75,10 +75,12 @@ class Solver:
         """:param margin_top: отступ сверху.
         :param margin_bottom: отступ снизу.
         :returns dictionary('xMin', 'xMax', 'yMin', 'yMax'): координаты прямоугольника, ограничивающего поле зрения."""
+        points = self.points.copy()
+        points[points == np.inf] = 0
         return {'xMin': self.axis_consts[0] - margin_bottom,
-                'xMax': np.max(self.points[:, ::2]) + margin_top,
+                'xMax': np.max(points[:, 1::2]) + margin_top,
                 'yMin': self.axis_consts[1] - margin_bottom,
-                'yMax': np.max(self.points[:, 1::2]) + margin_top}
+                'yMax': np.max(points[:, ::2]) + margin_top}
 
     def get_constraints(self):
         """:returns [[[x1_1, y2_2], [x1_2, y1_2]], ...]: список пар точек для построения линейных ограничений."""
