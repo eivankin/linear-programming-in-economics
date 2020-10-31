@@ -64,20 +64,6 @@ class AbstractModel:
                 self._saved = True
                 self.id = CURSOR.lastrowid
 
-        def update(self):
-            """Обновляет сохранённый объект в базе данных.
-            Если объект не сохранён, ничего не происходит."""
-            if self._saved:
-                filtered = {}
-                for key in self.__dict__.keys():
-                    if not key.startswith('_') and key != 'id':
-                        filtered[key] = self.__dict__[key]
-
-                CURSOR.execute(f'''UPDATE {self._model.TABLE}
-                    SET {", ".join(map(lambda x: f'{x}=?', filtered.keys()))}
-                    WHERE id=?''', (*filtered.values(), self.id))
-                CONNECTION.commit()
-
         def delete(self):
             """Удаляет объект из базы данных, если он есть в ней.
             Если объект не сохранён в базе данных, ничего не происходит."""
@@ -86,6 +72,15 @@ class AbstractModel:
                 CONNECTION.commit()
                 self._saved = False
                 del self.id
+
+    def update(self, pk, **kwargs):
+        """Обновляет объект в базе данных по id.
+        :param pk: id объекта в БД.
+        :param kwargs: словарь, ключи которого являются атрибутами для обновления."""
+        CURSOR.execute(f'''UPDATE {self.TABLE}
+            SET {", ".join(map(lambda x: f'{x}=?', kwargs.keys()))}
+            WHERE id=?''', (*kwargs.values(), pk))
+        CONNECTION.commit()
 
     def new(self, **kwargs):
         """Создаёт и возвращает объект модели с заданными аттрибутами."""
