@@ -1,5 +1,4 @@
 import sqlite3
-from functools import reduce
 from collections import defaultdict
 
 """В этом файле содержится подключение к базе данных sqlite3 и объекты моделей,
