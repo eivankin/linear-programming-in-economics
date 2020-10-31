@@ -13,19 +13,6 @@ class Ui_SolveViewer:
         self.plotter = Plotter(MainWindow)
         self.plotter.setObjectName("plot")
         MainWindow.setCentralWidget(self.plotter)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 783, 23))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.menubar.setFont(font)
-        self.menubar.setObjectName("menubar")
-        self.saveMenu = QtWidgets.QMenu(self.menubar)
-        self.saveMenu.setObjectName("menu")
-        MainWindow.setMenuBar(self.menubar)
-        self.saveReportAction = QtWidgets.QAction(MainWindow)
-        self.saveReportAction.setObjectName("action")
-        self.saveMenu.addAction(self.saveReportAction)
-        self.menubar.addAction(self.saveMenu.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -33,8 +20,6 @@ class Ui_SolveViewer:
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Решение задачи"))
-        self.saveMenu.setTitle(_translate("MainWindow", "Экспорт"))
-        self.saveReportAction.setText(_translate("MainWindow", "Сохранить отчёт в виде изображения"))
 
 
 class Ui_TaskViewer:

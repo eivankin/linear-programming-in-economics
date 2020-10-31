@@ -16,7 +16,6 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.saveReportAction.triggered.connect(self.save_image)
 
     def show_solution(self, task):
         """:param task: объект модели TaskModel"""
@@ -77,12 +76,6 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
         return f'<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', Times, serif">' \
                f'{a1}x<sub>1</sub> + {a2}x<sub>2</sub> {self.mark} {const}</p>'
 
-    def save_image(self):
-        file_name, ok = QFileDialog.getSaveFileName(self, 'Сохранить отчёт',
-                                                    'Решение.png', 'Images (*.png *.jpg *.tiff)')
-        if ok:
-            self.plotter.save(file_name)
-
 
 class NewConstraintDialog(QDialog, Ui_NewConstraintDialog):
     def __init__(self, parent):
@@ -101,7 +94,7 @@ class NewConstraintDialog(QDialog, Ui_NewConstraintDialog):
     def check_form(self):
         a1 = self.a1Coef.value()
         a2 = self.a2Coef.value()
-        self.lim_type = TaskModel.LIM_INF if self.typeSelector.currentText() == '<=' else TaskModel.LIM_ZERO
+        self.lim_type = TaskModel.LIM_INF if self.typeSelector.currentText() == '>=' else TaskModel.LIM_ZERO
         self.const = self.constant.value()
         self.symbol = self.typeSelector.currentText()
         if a1 or a2:
@@ -237,7 +230,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
             self.statusbar.showMessage('Задачи из файла успешно загржены', msecs=5000)
 
     def delete_selected(self):
-        selected = [i.row() for i in self.tableWidget.selectedItems()]
+        selected = sorted(set([i.row() for i in self.tableWidget.selectedItems()]))
         ids = [self.tableWidget.item(i, 0).text() for i in selected]
         if selected:
             ok = QMessageBox.question(
@@ -252,7 +245,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                     self.tableWidget.removeRow(row)
                     if not self.current_file:
                         obj = TASKS.get(id=ids[i])
-                        if obj.saved:
+                        if obj._saved:
                             obj.delete()
         else:
             self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
@@ -270,10 +263,16 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         ok, task = td.get_new_task('row' if self.current_file else 'obj')
         if ok:
             if self.current_file:
-                pass  # TODO
+                i = self.tableWidget.rowCount()
+                self.tableWidget.setRowCount(i + 1)
+                for j, elem in enumerate(task):
+                    self.tableWidget.setItem(i, j, QTableWidgetItem(str(elem)))
+                self.statusbar.showMessage('Задача добавлена в таблицу, для сохранения файла с ней нажмите конпку '
+                                           '"Сохранить изменения"', msecs=5000)
             else:
                 task.save()
                 self.load_db()
+                self.statusbar.showMessage('Задача успешно добавлена в базу данных', msecs=5000)
 
     def solve_new_task(self):
         td = NewTaskDialog(self)
