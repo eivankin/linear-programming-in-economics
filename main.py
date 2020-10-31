@@ -28,6 +28,7 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
             QMessageBox.warning(self, 'Ошибка!',
                                 'Похоже, у задачи заполнены не все данные. '
                                 'Проверьте правильность входных данных.')
+            return
         self.mark = '&ge;' if solver.lim == TaskModel.LIM_ZERO else '&le;'
         for i, constraint in enumerate(solver.get_constraints()[:, :, ::-1]):
             self.plotter.plot(x=constraint[:, ::2].ravel(),
@@ -203,12 +204,15 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         super().__init__()
         self.setupUi(self)
 
+        self.tableWidget.itemChanged.connect(self.handle_change)
+        self.changes = {}
+
         self.loadDBAction.triggered.connect(self.load_db)
         self.loadFileAction.triggered.connect(self.load_csv)
         self.addNewTaskAction.triggered.connect(self.append_task)
         self.solveNewTaskAcion.triggered.connect(self.solve_new_task)
 
-        self.searchLine.textChanged.connect(self.search)
+        self.searchButton.clicked.connect(self.search)
 
         self.saveButton.clicked.connect(self.save_changes)
         self.saveButton.setToolTip('Сохранить изменения, внесённые напрямую в таблицу.')
@@ -330,15 +334,23 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
             else:
                 indexes = sorted(set([i.row() for i in self.tableWidget.selectedItems()]))
             for i in indexes:
-
                 table.append([self.tableWidget.item(i, j).text() for j in range(1, len(TASKS.ATTRS))])
             save_csv(file_name, table, options['delimiter'])
             self.statusbar.showMessage('Задачи успешо экспортированы', msecs=5000)
 
+    def handle_change(self, item):
+        if not self.current_file:
+            index = self.tableWidget.item(item.row(), 0).text()
+            current_elem = self.changes.get(index, {})
+            current_elem[TASKS.ATTRS[item.column()]] = item.text()
+            self.changes[index] = current_elem
+
     def save_changes(self):
         """Сохранение изменений, внесённых пользователем напрямую в таблицу."""
         if not self.current_file:
-            pass  # TODO: saving db objects with update method
+            for pk in self.changes.keys():
+                TASKS.update(pk, **self.changes[pk])
+            self.changes = {}
         else:
             table = [TASKS.ATTRS[1:]]
             for i in range(self.tableWidget.rowCount()):
