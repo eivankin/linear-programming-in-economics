@@ -10,6 +10,7 @@ import csv
 
 
 def compress(x):
+    """Преобразует список чисел в строку, разделяя их запятыми"""
     return ','.join(map(str, x))
 
 
@@ -21,10 +22,12 @@ def save_csv(file_name, table, delimiter):
 
 
 class SolverException(Exception):
+    """Поднимается в случае, если не удалось найти решение ЗЛП (решатель вернул ненулевой код)."""
     pass
 
 
 class NoSolutionError(SolverException):
+    """Поднимается в случае, если решения для задачи нет"""
     pass
 
 
@@ -50,10 +53,10 @@ class Plotter(pg.PlotWidget):
 
 
 class Solver:
-    """Класс для решения задачи линейного программирования и получения значений для построения.
-    :param task: объект модели TaskModel."""
+    """Класс для решения задачи линейного программирования и получения значений для построения."""
 
     def __init__(self, task):
+        """:param task: объект модели TaskModel."""
         if type(task.target_func_lim) == str:
             dd = TaskModel.VERBOSE_VALS['target_func_lim']
             self.lim = list(dd.keys())[list(dd.values()).index(task.target_func_lim)]
@@ -105,9 +108,11 @@ class Solver:
         return result.x, result.fun * self.lim
 
     def __logging(self, res):
+        """Внутренний метод для сохранения точек, которые обошёл решатель."""
         self.possible_points[res.x[0]] = max(self.possible_points.get(res.x[0], res.x[1] - 1), res.x[1])
 
     def get_possible_points(self):
-        """WARNING: works strange if self.lim == Task.Model.LIM_ZERO, use it only if self.lim == TaskModel.LIM_INF
-        :returns possible_points: границы области допустимых решений."""
+        """ПРЕДУПРЕЖДЕНИЕ: в случае, когда оптимальное значение функции - минимальное, возвращает точки,
+        не являющиеся вершинами области допустимых решений
+        :returns possible_points: вершины области допустимых решений."""
         return OrderedDict(sorted(self.possible_points.items()))

@@ -73,7 +73,8 @@ class SolutionViewer(QMainWindow, Ui_SolveViewer):
         super().show()
 
     def render_constraint(self, number):
-        """:param number: порядковый номер ограничения, начиная с 0."""
+        """Возвращает ограничение в виде HTML для отрисовки в легенде.
+        :param number: порядковый номер ограничения, начиная с 0."""
         a1, a2 = self.coefs[number * 2:number * 2 + 2]
         const = self.consts[number]
         return f'<p style="font-size: 12pt; font-family:Georgia, \'Times New Roman\', Times, serif">' \
@@ -91,10 +92,16 @@ class NewConstraintDialog(QDialog, Ui_NewConstraintDialog):
         self.lim_type = None
 
     def get_new_constraint(self):
+        """:return status: код возврата
+        :return coefs: коэффициенты неравенства при x1 и x2
+        :return const: число в правой части неравенства
+        :return symbol: '<=' или '>='
+        :return lim_type: -1 или 1 в зависимости от значения переменной symbol"""
         ok = super().exec()
         return ok, self.coefs, self.const, self.symbol, self.lim_type
 
     def check_form(self):
+        """Проверяет корректность заполнения формы, если она заполнена правильно, то вызывает метод self.accept()"""
         a1 = self.a1Coef.value()
         a2 = self.a2Coef.value()
         self.lim_type = TaskModel.LIM_INF if self.typeSelector.currentText() == '>=' else TaskModel.LIM_ZERO
@@ -148,6 +155,7 @@ class NewTaskDialog(QDialog, Ui_NewTaskDialog):
             QMessageBox.warning(self, 'Ошибка!', 'Не выбраны линейные ограничения для удаления!')
 
     def check_form(self):
+        """Проверяет корректность заполнения формы, если она заполнена правильно, то вызывает метод self.accept()"""
         ps = self.problemSituation.toPlainText()
         dd = TaskModel.VERBOSE_VALS['target_func_lim']
         tf_opt_val = list(dd.keys())[list(dd.values()).index(self.optimalValue.currentText())]
@@ -174,10 +182,17 @@ class ExportDialog(QDialog, Ui_ExportDialog):
         self.file_name = ''
 
     def get_export_options(self):
+        """:return status: код возврата
+        :return file_name: имя файла, куда следует сохранить таблицу
+        :return options: словарь с опциями для экспорта:
+            delimiter: разделитель значений в таблице: str;
+            write_title: записывать ли в начало таблицы заголовок: bool;
+            export_all: экспортировать все задачи или только выбранные: bool"""
         ok = super().exec()
         return ok, self.file_name, self.options
 
     def check_form(self):
+        """Проверяет корректность заполнения формы, если она заполнена правильно, то вызывает метод self.accept()"""
         self.file_name = self.lineEdit.text()
         delimiter = self.lineEdit_2.text()
         write_title = self.checkBox.isChecked()
@@ -195,6 +210,7 @@ class ExportDialog(QDialog, Ui_ExportDialog):
                                                  'для таблицы должны быть заполнены.')
 
     def select_file(self):
+        """Получает новое имя файла через QFileDialog"""
         file_name, ok = QFileDialog.getSaveFileName(self, 'Выберите файл для сохранения',
                                                     '', 'СSV-таблица (*.csv)')
         if ok:
@@ -213,7 +229,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
 
         self.loadDBAction.triggered.connect(self.load_db)
         self.loadFileAction.triggered.connect(self.load_csv)
-        self.addNewTaskAction.triggered.connect(self.append_task)
+        self.addNewTaskAction.triggered.connect(self.append_new_task)
         self.solveNewTaskAcion.triggered.connect(self.solve_new_task)
 
         self.searchButton.clicked.connect(self.search)
@@ -303,7 +319,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         else:
             self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
 
-    def append_task(self):
+    def append_new_task(self):
         td = NewTaskDialog(self)
         ok, task = td.get_new_task('row' if self.current_file else 'obj')
         if ok:
@@ -391,6 +407,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
             self.statusbar.showMessage('Задачи успешо экспортированы', msecs=5000)
 
     def handle_change(self, item):
+        """Обработчик события, когда пользователь изменяет значение в клетке таблицы"""
         if not self.current_file:
             index = self.tableWidget.item(item.row(), 0).text()
             current_elem = self.changes.get(index, {})
