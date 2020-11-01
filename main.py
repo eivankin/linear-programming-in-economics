@@ -1,20 +1,26 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, \
     QTableWidgetItem, QMessageBox, QDialog
 from views import Ui_SolveViewer, Ui_TaskViewer, Ui_NewTaskDialog, \
-    Ui_NewConstraintDialog, Ui_ExportDialog
+    Ui_NewConstraintDialog, Ui_ExportDialog, Ui_AboutDialog
 import sys
 from models import TaskModel, TagModel, TaskTagModel, CONNECTION
 from utility import Solver, NoSolutionError, SolverException, save_csv, compress
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QPixmap
 import csv
 import numpy as np
 from pyqtgraph import PlotDataItem
+from PyQt5.QtCore import Qt
 
 TASKS = TaskModel()
 TAGS = TagModel()
 TASKS_TAGS = TaskTagModel()
 
-# TODO: add keyPressEvents and about dialog with image
+
+class AboutDialog(QDialog, Ui_AboutDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setupUi(self)
+        self.imageLabel.setPixmap(QPixmap('default_image.jpg').scaledToWidth(300))
 
 
 class SolutionViewer(QMainWindow, Ui_SolveViewer):
@@ -246,6 +252,11 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.tableWidget.itemChanged.connect(self.handle_change)
         self.changes = {}
 
+        self.loadFileAction.setShortcut('Ctrl+O')
+        self.loadDBAction.setShortcut('Ctrl+B')
+        self.addNewTaskAction.setShortcut('Ctrl+N')
+        self.solveNewTaskAcion.setShortcut('Alt+N')
+
         self.tagSelector.addItems([x.name for x in TAGS.all()])
 
         self.loadDBAction.triggered.connect(self.load_db)
@@ -256,14 +267,14 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.searchButton.clicked.connect(self.search)
 
         self.saveButton.clicked.connect(self.save_changes)
-        self.saveButton.setToolTip('Сохранить изменения, внесённые напрямую в таблицу.')
+        self.saveButton.setToolTip('Сохранить изменения, внесённые напрямую в таблицу')
         self.solveButton.clicked.connect(self.solve_selected)
         self.solveButton.setToolTip('Решить выбранную задачу. '
                                     'Если выбрано несколько, будет решена первая выбранная.')
         self.deleteButton.clicked.connect(self.delete_selected)
         self.deleteButton.setToolTip('Удалить выбранные задачи')
         self.exportButton.clicked.connect(self.export)
-        self.exportButton.setToolTip('Открыть диалог экспорта задач в CSV.')
+        self.exportButton.setToolTip('Открыть диалог экспорта задач в CSV')
         self.tableWidget.setColumnCount(len(TASKS.ATTRS))
         self.comboBox.addItems(TASKS.get_title()[:2])
         self.tableWidget.setHorizontalHeaderLabels(TASKS.get_title())
@@ -346,6 +357,8 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                     if not self.current_file:
                         obj = TASKS.get(id=ids[i])
                         obj.delete()
+                    else:
+                        self.changes['deletions'] = 1
         else:
             self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
 
@@ -368,6 +381,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                     self.tableWidget.setItem(i, j, QTableWidgetItem(str(elem)))
                 self.statusbar.showMessage('Задача добавлена в таблицу, для сохранения файла с ней нажмите конпку '
                                            '"Сохранить изменения"', msecs=5000)
+                self.changes['inserts'] = 1
             else:
                 task.save()
                 tag_1 = TASKS_TAGS.new(task_id=task.id, tag_id=TAGS.get(name='Мои задачи').id)
@@ -465,9 +479,24 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.changes = {}
         self.statusbar.showMessage('Изменения успешно сохранены', msecs=5000)
 
+    def show_help(self):
+        AboutDialog(self).exec()
+
     def closeEvent(self, event):
         CONNECTION.close()
         event.accept()
+
+    def keyPressEvent(self, event):
+        if int(event.modifiers()) == Qt.ControlModifier and event.key() == Qt.Key_S:
+            self.save_changes()
+        elif int(event.modifiers()) == Qt.AltModifier and event.key() == Qt.Key_S:
+            self.solve_selected()
+        elif event.key() == Qt.Key_Delete:
+            self.delete_selected()
+        elif int(event.modifiers()) == Qt.ControlModifier and event.key() == Qt.Key_E:
+            self.export()
+        elif event.key() == Qt.Key_F1:
+            self.show_help()
 
 
 if __name__ == '__main__':
