@@ -11,17 +11,19 @@ CURSOR = CONNECTION.cursor()
 
 
 class AbstractModel:
+    """Базовый класс модели для наследования"""
     TABLE = None
     VERBOSE_ATTRS = {}
     VERBOSE_VALS = defaultdict(dict)
 
     def __init__(self):
         self.ATTRS = [] if not self.TABLE else [
-                d[0] for d in
-                CURSOR.execute('SELECT * FROM ' + self.TABLE).description
-            ]
+            d[0] for d in
+            CURSOR.execute('SELECT * FROM ' + self.TABLE).description
+        ]
 
     def get_title(self):
+        """Возвращает человекочитаемый список атрибутов"""
         return [self.VERBOSE_ATTRS.get(a, a) for a in self.ATTRS]
 
     class __ModelObject:
@@ -68,7 +70,7 @@ class AbstractModel:
             """Удаляет объект из базы данных, если он есть в ней.
             Если объект не сохранён в базе данных, ничего не происходит."""
             if self._saved:
-                CURSOR.execute(f'''DELETE FROM {self._model.TABLE} WHERE id=?''', (self.id, ))
+                CURSOR.execute(f'''DELETE FROM {self._model.TABLE} WHERE id=?''', (self.id,))
                 CONNECTION.commit()
                 self._saved = False
                 del self.id
