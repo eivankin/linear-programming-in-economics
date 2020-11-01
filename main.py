@@ -14,11 +14,16 @@ TASKS = TaskModel()
 TAGS = TagModel()
 TASKS_TAGS = TaskTagModel()
 
+# TODO: add keyPressEvents and about dialog with image
+
 
 class SolutionViewer(QMainWindow, Ui_SolveViewer):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.coefs = []
+        self.consts = []
+        self.mark = ''
 
     def show_solution(self, task):
         """:param task: объект модели TaskModel"""
@@ -268,43 +273,61 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.current_file = None
 
     def load_db(self):
-        self.tagSelector.setEnabled(True)
-        self.current_file = None
-        self.tableWidget.setRowCount(0)
-        for i, obj in enumerate(TASKS.all()):
-            self.tableWidget.setRowCount(i + 1)
-            for j, attr in enumerate(TASKS.ATTRS):
-                self.tableWidget.setItem(
-                    i, j, QTableWidgetItem(TASKS.VERBOSE_VALS[attr].get(
-                        obj.__dict__[attr], str(obj.__dict__[attr]))))
-        self.statusbar.showMessage('База примеров упспешно загружена', msecs=5000)
+        ok = QMessageBox.Yes
+        if self.changes:
+            ok = QMessageBox.question(
+                self, 'Потдверждение действия',
+                'У вас есть несохранённые изменения, они будут потеряны после загрузки БД. Продолжить?',
+                QMessageBox.Yes, QMessageBox.No
+            )
+        if ok == QMessageBox.Yes:
+            self.tagSelector.setEnabled(True)
+            self.current_file = None
+            self.tableWidget.setRowCount(0)
+            for i, obj in enumerate(TASKS.all()):
+                self.tableWidget.setRowCount(i + 1)
+                for j, attr in enumerate(TASKS.ATTRS):
+                    self.tableWidget.setItem(
+                        i, j, QTableWidgetItem(TASKS.VERBOSE_VALS[attr].get(
+                            obj.__dict__[attr], str(obj.__dict__[attr]))))
+            self.statusbar.showMessage('База примеров упспешно загружена', msecs=5000)
+            self.changes = {}
 
     def load_csv(self, file_name=None):
-        ok = True
-        if not file_name:
-            file_name, ok = QFileDialog.getOpenFileName(self, 'Выберите таблицу', '',
-                                                        'CSV-таблица с разделителем ";" (*.csv)')
-        if ok:
-            self.tagSelector.setCurrentIndex(0)
-            self.tagSelector.setDisabled(True)
-            with open(file_name, encoding='utf-8') as csv_file:
-                table = csv.reader(csv_file, delimiter=';', quotechar='"')
-                title = next(table)
-                if title == TASKS.ATTRS[1:]:
-                    self.current_file = file_name
-                    self.tableWidget.setRowCount(0)
-                    for i, row in enumerate(table, start=1):
-                        self.tableWidget.setRowCount(i)
-                        for j, val in enumerate([i] + row):
-                            current = TASKS.VERBOSE_VALS[TASKS.ATTRS[j]]
-                            try:
-                                decoded_val = current.get(type(list(current)[0] if current else '')(val), str(val))
-                            except ValueError:
-                                decoded_val = val
-                            self.tableWidget.setItem(i - 1, j, QTableWidgetItem(decoded_val))
-                else:
-                    self.statusbar.showMessage('Некорректная структура таблицы', msecs=5000)
-            self.statusbar.showMessage('Задачи из файла успешно загржены', msecs=5000)
+        valid = QMessageBox.Yes
+        if self.changes:
+            valid = QMessageBox.question(
+                self, 'Потдверждение действия',
+                'У вас есть несохранённые изменения, они будут потеряны после загрузки таблицы. Продолжить?',
+                QMessageBox.Yes, QMessageBox.No
+            )
+        if valid == QMessageBox.Yes:
+            ok = True
+            if not file_name:
+                file_name, ok = QFileDialog.getOpenFileName(self, 'Выберите таблицу', '',
+                                                            'CSV-таблица с разделителем ";" (*.csv)')
+            if ok:
+                self.tagSelector.setCurrentIndex(0)
+                self.tagSelector.setDisabled(True)
+                with open(file_name, encoding='utf-8') as csv_file:
+                    table = csv.reader(csv_file, delimiter=';', quotechar='"')
+                    title = next(table)
+                    if title == TASKS.ATTRS[1:]:
+                        self.current_file = file_name
+                        self.tableWidget.setRowCount(0)
+                        for i, row in enumerate(table, start=1):
+                            self.tableWidget.setRowCount(i)
+                            for j, val in enumerate([i] + row):
+                                current = TASKS.VERBOSE_VALS[TASKS.ATTRS[j]]
+                                try:
+                                    decoded_val = current.get(type(list(current)[0] if current else '')(val), str(val))
+                                except ValueError:
+                                    decoded_val = val
+                                self.tableWidget.setItem(i - 1, j, QTableWidgetItem(decoded_val))
+                    else:
+                        self.statusbar.showMessage('Некорректная структура таблицы', msecs=5000)
+                self.statusbar.showMessage('Задачи из файла успешно загржены', msecs=5000)
+                self.changes = {}
 
     def delete_selected(self):
         selected = sorted(set([i.row() for i in self.tableWidget.selectedItems()]))
@@ -322,8 +345,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                     self.tableWidget.removeRow(row)
                     if not self.current_file:
                         obj = TASKS.get(id=ids[i])
-                        if obj._saved:
-                            obj.delete()
+                        obj.delete()
         else:
             self.statusbar.showMessage('Ничего не выбрано!', msecs=5000)
 
@@ -424,24 +446,23 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
 
     def handle_change(self, item):
         """Обработчик события, когда пользователь изменяет значение в клетке таблицы"""
-        if not self.current_file:
-            index = self.tableWidget.item(item.row(), 0).text()
-            current_elem = self.changes.get(index, {})
-            current_elem[TASKS.ATTRS[item.column()]] = item.text()
-            self.changes[index] = current_elem
+        index = self.tableWidget.item(item.row(), 0).text()
+        current_elem = self.changes.get(index, {})
+        current_elem[TASKS.ATTRS[item.column()]] = item.text()
+        self.changes[index] = current_elem
 
     def save_changes(self):
         """Сохранение изменений, внесённых пользователем напрямую в таблицу."""
         if not self.current_file:
             for pk in self.changes.keys():
                 TASKS.update(pk, **self.changes[pk])
-            self.changes = {}
         else:
             table = [TASKS.ATTRS[1:]]
             for i in range(self.tableWidget.rowCount()):
                 table.append([self.tableWidget.item(i, j).text() for j in range(1, len(TASKS.ATTRS))])
             save_csv(self.current_file, table, ';')
             self.load_csv(self.current_file)
+        self.changes = {}
         self.statusbar.showMessage('Изменения успешно сохранены', msecs=5000)
 
     def closeEvent(self, event):
