@@ -1,7 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from utility import Plotter
 
-
 """В этом файле хранятся классы интерфейсов, созданные в QtDesigner"""
 
 
@@ -24,7 +23,7 @@ class Ui_SolveViewer:
 class Ui_TaskViewer:
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(600, 400)
+        MainWindow.resize(800, 500)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -390,7 +389,7 @@ class Ui_ExportDialog(object):
         self.verticalLayout.addWidget(self.radioButton_2)
         self.buttonBox = QtWidgets.QDialogButtonBox(Dialog)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout.addWidget(self.buttonBox)
 
@@ -565,7 +564,8 @@ class Ui_AboutDialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "О программе"))
-        self.label_3.setText(_translate("Dialog", "Графический метод решения задач линейного программирования для экономических задач"))
+        self.label_3.setText(
+            _translate("Dialog", "Графический метод решения задач линейного программирования для экономических задач"))
         self.label_2.setText(_translate("Dialog", "Список горячих клавиш:"))
         self.label_4.setText(_translate("Dialog", "Ctrl+O"))
         self.label_5.setText(_translate("Dialog", "Открыть файл"))

@@ -250,6 +250,8 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.setupUi(self)
 
         self.tableWidget.itemChanged.connect(self.handle_change)
+        self.tableWidget.setWordWrap(True)
+        self.tableWidget.verticalHeader().setVisible(False)
         self.changes = {}
 
         self.loadFileAction.setShortcut('Ctrl+O')
@@ -279,6 +281,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         self.comboBox.addItems(TASKS.get_title()[:2])
         self.tableWidget.setHorizontalHeaderLabels(TASKS.get_title())
         self.tableWidget.resizeColumnsToContents()
+        self.tableWidget.setColumnWidth(1, 250)
         self.load_db()
         self.solution_viewer = SolutionViewer()
         self.current_file = None
@@ -464,6 +467,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
         current_elem = self.changes.get(index, {})
         current_elem[TASKS.ATTRS[item.column()]] = item.text()
         self.changes[index] = current_elem
+        self.tableWidget.resizeRowsToContents()
 
     def save_changes(self):
         """Сохранение изменений, внесённых пользователем напрямую в таблицу."""
