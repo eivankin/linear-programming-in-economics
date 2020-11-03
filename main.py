@@ -417,6 +417,15 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                         result.append([self.tableWidget.item(i, j).text()
                                        for j in range(self.tableWidget.columnCount())])
             else:
+                if self.changes:
+                    valid = QMessageBox.question(
+                        self, 'Потдверждение действия',
+                        'У вас есть несохранённые изменения, они будут потеряны после загрузки '
+                        'результатов поиска. Продолжить?',
+                        QMessageBox.Yes, QMessageBox.No
+                    )
+                    if not valid:
+                        return
                 if query:
                     if field != 'По всем параметрам':
                         result = TASKS.filter(**{field: query})
@@ -439,6 +448,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                     self.tableWidget.setRowCount(i + 1)
                     for j, elem in enumerate(row):
                         self.tableWidget.setItem(i, j, QTableWidgetItem(str(elem)))
+                self.changes = {}
             else:
                 self.statusbar.showMessage('Ничего не найдено', msecs=5000)
         else:
