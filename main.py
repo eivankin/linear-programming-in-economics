@@ -424,7 +424,7 @@ class TaskViewer(QMainWindow, Ui_TaskViewer):
                         'результатов поиска. Продолжить?',
                         QMessageBox.Yes, QMessageBox.No
                     )
-                    if not valid:
+                    if valid != QMessageBox.Yes:
                         return
                 if query:
                     if field != 'По всем параметрам':
